@@ -1,4 +1,6 @@
 # --- Python ---
+junkyard/
+
 __pycache__/
 *.py[cod]
 *.pyo
