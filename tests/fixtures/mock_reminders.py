@@ -7,7 +7,6 @@ import utils as fcn
 from reminder_item import ReminderItem
 
 test_data = [  # Flag, title, date_str, time_str, repeat, notes
-    [ "!", "No entries yet. Add some!", "", "", "", "" ],
     [ "", "Simple reminder", "2027-01-01", "09:00", "...", "" ],
     [ "", "A rather long reminder with a lot of text in it", "2027-01-02", "10:30", "...", "" ],
     [ "", "Event with location note", "2027-01-04", "22:00", "(10 pm)", "At Ginny's house." ],

@@ -16,10 +16,6 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QAbstractItemView,
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QFontMetrics
 
-from app.qt_ui.qt_table_model_adapter import QtTableModelAdapter
-from app.qt_ui.qt_row_aware_table_view import QtRowAwareTableView
-###from qt_ui.thin_rows_style import ThinRowsStyle
-
 from delegates.centered_delegate import CenteredDelegate
 
 # noinspection PyPep8Naming
@@ -136,9 +132,6 @@ class RemindersWindow(QMainWindow):
         self.table_view.setSelectionMode(QAbstractItemView.NoSelection) # type: ignore[attr-defined]
         self.table_view.verticalHeader().setVisible(False)
         self.table_view.horizontalHeader().setStretchLastSection(False)
-        #
-        # TEST
-        ####self.table_view.setStyle(ThinRowsStyle(self.table_view.style()))
 
         # Wiring to toggle the is_critical flag
         from delegates.flag_delegate import FlagDelegate
@@ -165,7 +158,6 @@ class RemindersWindow(QMainWindow):
         
         # Use QTimer to defer layout until the window is done & the event-loop is running
         QTimer.singleShot(0, self._finish_init)
-        #print(">>> Reminders init() Finished (after QTimer > _finish_init)")
     
     # end Init
     
@@ -259,7 +251,7 @@ class RemindersWindow(QMainWindow):
                 
                 # Get the actual font for this cell
                 font = view.font()
-                if model.is_critical_row(row):
+                if model.is_critical(row):
                     font.setBold(True)
                 
                 fm = QFontMetrics(font)
@@ -301,7 +293,7 @@ class RemindersWindow(QMainWindow):
             
             # First line may be bold
             for i, line in enumerate(lines):
-                if i == 0 and model.is_critical_row(row):
+                if i == 0 and model.is_critical(row):
                     fm = QFontMetrics(bold_font)
                 else:
                     fm = QFontMetrics(base_font)

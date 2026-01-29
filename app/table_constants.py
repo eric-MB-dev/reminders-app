@@ -1,7 +1,8 @@
 # ==========================================================
 # Shared constants used by reminders_window and _table model
 # USAGE:
-#   import app.table_constants as C
+# noinspection PyPep8Naming
+# import app.table_constants as C
 #
 # Reference:
 #   C.COLUMN_LABELS
@@ -14,11 +15,11 @@
 APP_NAME = "Reminders"
 # Data Columns
 # (Labels have leading spaces to simulate centering in fixed-width columns)
-VM_COLUMN_LABELS  = ["! !", "Item", "Day", "Date", "Time", "Countdown"]
-VM_COL_ALIGNMENTS = ["Ctr", "Left", "Ctr", "Ctr",   "Ctr",  "Left" ]
-VM_COL_MIN_WIDTHS = [  8,    200,    40,    90,        72,    120 ]
-VM_COL_MAX_WIDTHS = [  8,    360,    80,   180,       148,    180 ]   # Allow for bold text
-# Column Numbers:      0       1      2      3          4       5
+VM_COLUMN_LABELS  = ["! !", "Items", "Day", "Date", "Time", "Countdown"]
+VM_COL_ALIGNMENTS = ["Ctr", "Left",  "Ctr", "Ctr",   "Ctr",  "Left" ]
+VM_COL_MIN_WIDTHS = [  8,    200,     40,    90,        72,    120 ]
+VM_COL_MAX_WIDTHS = [  8,    360,     80,   180,       148,    180 ]   # Allow for bold text
+# Column Numbers:      0       1       2      3          4       5
 # Data columns:
 #DESCR_COL = 0; DAY_COL = 1; DATE_COL = 2; TIME_COL = 3; COUNTDOWN_COL = 4
 
@@ -27,7 +28,7 @@ VM_COL_MAX_WIDTHS = [  8,    360,    80,   180,       148,    180 ]   # Allow fo
 
 # Button columns
 UI_BUTTON_COLUMNS = 4
-UI_BUTTON_LABELS      = ["Edit", "Alerts", "Next", " Del"]  # TODO (Future): Reuse btn_labels for rollovers
+UI_BUTTON_LABELS      = ["Edit", "Alerts", "Next", " Del"]
 UI_BUTTON_ALIGNMENTS = ["Ctr", "Ctr", "Ctr", " Ctr"]
 UI_BUTTON_COL_WIDTHS = [35, 42, 35, 35]
 
@@ -68,5 +69,6 @@ UI_BUTTON_RANGE = range(FIRST_BTN_COL, LAST_COL + 1)
 #INIT_DESCR_WIDTH = VM_COL_MIN_WIDTHS[DESCR_COL]
 #TOTAL_OTHER_COLS = sum(VM_COL_MIN_WIDTHS) - INIT_DESCR_WIDTH
 
-DEFAULT_HDR_FONT_SIZE = 10
-DEFAULT_CELL_FONT_SIZE = 11
+DEFAULT_CELL_FONT_SIZE = 11  # Header font set to one less in config
+
+INITIAL_DATA = ["!", "No entries yet. Add some!", "", "", "", ""]

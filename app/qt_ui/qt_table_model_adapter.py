@@ -7,7 +7,7 @@
 # authority on the table’s shape and is the bridge between domain-model data & Qt.
 
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex
-from PySide6.QtGui import QFont, QFontMetrics, QIcon
+from PySide6.QtGui import QFont, QIcon # QFontMetrics,
 
 from app.model.reminders_model import RemindersModel
 
@@ -35,17 +35,22 @@ class QtTableModelAdapter(QAbstractTableModel):
     def __init__(self, domain_model:RemindersModel):
         super().__init__()
         self.reminders_model = domain_model
-        
-        # UI state
+
+        # Entry data
+        self._data_rows = []
         self._is_critical = []
+        self._has_note = [ ]
         
         # Load rows from the domain model to derive UI state
         self.load_rows()
         self.reminders_model._fully_initialized = True
     
-    def is_critical_row(self, row):
+    def is_critical(self, row):
         return self._is_critical[row]
-    
+
+    def has_note(self, row):
+        return self._has_note[row]
+
     @_qt_guard
     def rowCount(self, parent=QModelIndex()):
         return len(self.reminders_model.display_rows())
@@ -59,14 +64,12 @@ class QtTableModelAdapter(QAbstractTableModel):
         self._is_critical = [
             (row[C.FLAG_COL] == C.IS_CRITICAL_FLAG) for row in self._data_rows
         ]
+        self._has_note = [
+            ("\n" in row[C.DESCR_COL]) for row in self._data_rows
+        ]
         
     @_qt_guard
     def data(self, index, role):
-        #DEBUG
-        '''if role == Qt.SizeHintRole:
-            print("MODEL SIZEHINT ROLE:", index.row(), index.column())
-        '''
-
         row = index.row()
         col = index.column()
         
@@ -77,9 +80,6 @@ class QtTableModelAdapter(QAbstractTableModel):
             if role == Qt.FontRole and self._is_critical[row]:
                 f = QFont()
                 f.setBold(True)
-                #new_size = f.pointSize() - 1 #TODO: FIX --Comes out TINY
-                #f.setPointSize(new_size)
-
                 return f
             
             # Display raw value from cached rows
@@ -87,14 +87,21 @@ class QtTableModelAdapter(QAbstractTableModel):
                 row_data = self._data_rows[row]
                 value = row_data[col]
                 #print(f"ROW DATA: row={index.row()}, col={index.column()}, value={value!r}")
-                return row_data[col]
+                return value
             
             if role == Qt.TextAlignmentRole:
-                if C.ALL_COL_ALIGNMENTS[col] == "Ctr":
-                    Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter
-                else:
-                    return Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
-            
+                vert_align = (
+                    Qt.AlignmentFlag.AlignTop
+                    if self.has_note(row)
+                    else Qt.AlignmentFlag.AlignVCenter
+                )
+                horiz_align = (
+                    Qt.AlignmentFlag.AlignHCenter
+                    if C.ALL_COL_ALIGNMENTS[col] == "Ctr"
+                    else Qt.AlignmentFlag.AlignLeft
+                )
+                return vert_align | horiz_align
+
             return None
         
         # --- Button columns ---
@@ -120,18 +127,6 @@ class QtTableModelAdapter(QAbstractTableModel):
         return None
     
     def headerData(self, section, orientation, role=Qt.DisplayRole):  # type: ignore[attr-defined]
-        '''
-        # Column headings = a horizontal "section"
-        if orientation != Qt.Horizontal:        # type: ignore[attr-defined]
-            return None
-        
-        if role == Qt.DisplayRole:              # type: ignore[attr-defined]
-            return C.ALL_COL_LABELS[section]
-        
-        if role == Qt.TextAlignmentRole:        # type: ignore[attr-defined]
-            if C.ALL_COL_ALIGNMENTS[section] == "Ctr":
-                return Qt.AlignCenter
-        '''
         # Only care about horizontal headers
         if orientation != Qt.Horizontal:  # type: ignore[attr-defined]
             return None

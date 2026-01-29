@@ -4,20 +4,24 @@ from PySide6.QtWidgets import QApplication
 
 import app.config as config
 
-from app.qt_ui.reminders_window      import RemindersWindow
+from app.qt_ui.reminders_window       import RemindersWindow
 from app.qt_ui.qt_table_model_adapter import QtTableModelAdapter
-from app.reminders_persistence       import RemindersPersistence
-from app.model.reminders_model       import RemindersModel
+from app.reminders_persistence        import RemindersPersistence
+from app.model.reminders_model        import RemindersModel
 
-USE_MOCK_DATA = True  # TODO: Set to production version
+# noinspection PyPep8Naming
+import table_constants as C
+
+USE_MOCK_DATA = True  # TODO: Set to False for production version
 
 def main():
     """
-    Confgure
+    Confguration sequence:
     RemindersPersistence → RemindersModel → RemindersTableModel → RemindersWindow
     """
     if USE_MOCK_DATA:
         from tests.fixtures.mock_reminders import mock_reminders
+        mock_data = C.INITIAL_DATA + mock_reminders
         domain_model = RemindersModel(reminder_list=mock_reminders)
     else:
         manager = RemindersPersistence(config.curr_csv_path)

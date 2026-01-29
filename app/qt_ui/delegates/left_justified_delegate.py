@@ -32,7 +32,7 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         
         # If not critical, fall back to normal painting
-        is_critical = index.model().is_critical_row(index.row())
+        is_critical = index.model().is_critical(index.row())
         if not is_critical:
             super().paint(painter, option, index)
             return
