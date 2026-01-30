@@ -7,12 +7,24 @@ from PySide6.QtWidgets import QStyledItemDelegate
 
 # noinspection PyPep8Naming
 import table_constants as C
-import sys, traceback
+#import sys, traceback
+
+from typing import cast, TYPE_CHECKING
+if TYPE_CHECKING:
+    from qt_table_model_adapter import QtTableModelAdapter
 
 class LeftJustifiedDelegate(QStyledItemDelegate):
     """
     Determine row height and expand rows as needed, and
     """
+    def initStyleOption(self, option, index):
+        """This code runs on non-critical rows, because paint() doesn't change it"""
+        super().initStyleOption(option, index)
+        from qt_table_model_adapter import QtTableModelAdapter
+        model = cast("QtTableModelAdapter", index.model())
+        vert_align = model.v_alignment_for(index.row(), index.column())
+        option.displayAlignment = vert_align | Qt.AlignmentFlag.AlignLeft
+
     def sizeHint(self, option, index):
         text = index.data(Qt.DisplayRole) or ""
         
@@ -50,31 +62,49 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         
         lines = text.split("\n")
         first = lines[0]
-        rest = lines[1:]
+        remainder = lines[1:]
         
         painter.save()
-        
-        # Base fonts
+
+        # Fonts & metrics
         bold_font = option.font
         bold_font.setBold(True)
         normal_font = QFont(option.font)
         normal_font.setBold(False)
-        
-        # Starting position
-        x = option.rect.left()
-        y = option.rect.top()
-        
-        # First line (bold)
-        painter.setFont(bold_font)
+
         fm_bold = QFontMetrics(bold_font)
+        fm_norm = QFontMetrics(normal_font)
+
+        # Compute total text height
+        total_height = fm_bold.height() + len(remainder) * fm_norm.height()
+
+        # Determine vertical alignment
+        from qt_table_model_adapter import QtTableModelAdapter
+        model = cast("QtTableModelAdapter", index.model())
+        vert_align = model.v_alignment_for(index.row(), index.column())
+
+        # Qtable refuses to adjust it's minimum row size below 28px or so.
+        # So we resort to code like this to center single-line rows in the
+        # overly-tall rows. (Multi-line rows work beautifully.)
+        if vert_align & Qt.AlignmentFlag.AlignVCenter:
+            # Single-line row (no note, centered)
+            y = option.rect.top() + (option.rect.height() - fm_bold.height()) // 2
+        else:
+            # Multi-line row start at top left of cell
+            y = option.rect.top()
+
+        # Starting x
+        x = option.rect.left()
+
+        # Draw first (bold) line
+        painter.setFont(bold_font)
         painter.drawText(x, y + fm_bold.ascent(), first)
         y += fm_bold.height()
-        
-        # Remaining lines (normal)
+
+        # Draw remaining lines
         painter.setFont(normal_font)
-        fm_norm = QFontMetrics(normal_font)
-        for line in rest:
+        for line in remainder:
             painter.drawText(x, y + fm_norm.ascent(), line)
             y += fm_norm.height()
-        
+
         painter.restore()

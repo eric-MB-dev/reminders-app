@@ -67,7 +67,23 @@ class QtTableModelAdapter(QAbstractTableModel):
         self._has_note = [
             ("\n" in row[C.DESCR_COL]) for row in self._data_rows
         ]
-        
+
+    @_qt_guard
+    def v_alignment_for(self, row, col):
+        return (
+            Qt.AlignmentFlag.AlignTop
+            if self.has_note(row)
+            else Qt.AlignmentFlag.AlignVCenter
+        )
+
+    @_qt_guard
+    def h_alignment_for(self, row, col):
+        return (
+            Qt.AlignmentFlag.AlignHCenter
+            if C.ALL_COL_ALIGNMENTS[col] == "Ctr"
+            else Qt.AlignmentFlag.AlignLeft
+        )
+
     @_qt_guard
     def data(self, index, role):
         row = index.row()
@@ -90,16 +106,8 @@ class QtTableModelAdapter(QAbstractTableModel):
                 return value
             
             if role == Qt.TextAlignmentRole:
-                vert_align = (
-                    Qt.AlignmentFlag.AlignTop
-                    if self.has_note(row)
-                    else Qt.AlignmentFlag.AlignVCenter
-                )
-                horiz_align = (
-                    Qt.AlignmentFlag.AlignHCenter
-                    if C.ALL_COL_ALIGNMENTS[col] == "Ctr"
-                    else Qt.AlignmentFlag.AlignLeft
-                )
+                vert_align = self.v_alignment_for(row, col)
+                horiz_align = self.h_alignment_for(row, col)
                 return vert_align | horiz_align
 
             return None
