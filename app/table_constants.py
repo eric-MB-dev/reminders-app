@@ -71,4 +71,5 @@ UI_BUTTON_RANGE = range(FIRST_BTN_COL, LAST_COL + 1)
 
 DEFAULT_CELL_FONT_SIZE = 11  # Header font set to one less in config
 
+DEFAULT_GEOM_STR = "582x278, 450x0"  # Initial size (wxh) and position (x,y)
 INITIAL_DATA = ["!", "No entries yet. Add some!", "", "", "", ""]

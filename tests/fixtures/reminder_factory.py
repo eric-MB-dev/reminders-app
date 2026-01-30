@@ -51,7 +51,7 @@ def make_two_reminders():
 
 def reminders_from_display_rows(rows):
     import datetime as dt
-    import utils as fcn
+    import utilities as fcn
     from reminder_item import ReminderItem
     
     reminders = []

@@ -5,7 +5,7 @@ from tkcalendar import DateEntry
 
 from app import config
 from app.timefield import TimeField
-import utils as fcn  # for getDay()
+import utilities as fcn  # for getDay()
 
 # Position of dialog relative to main frame
 X_OFFSET = 150

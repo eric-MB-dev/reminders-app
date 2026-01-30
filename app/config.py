@@ -40,7 +40,7 @@ class WindowPlacement:
     
 #window_placement: WindowPlacement | None = None
 #window_placement = WindowPlacement(256, 200, 1180, 0)
-geom_str = "582x278, 450x0"
+geom_str = C.DEFAULT_GEOM_STR
 
 def encode_geometry(w, h, x, y):
     """width, height x(horiz) & y(vert) position of upper left corner"""

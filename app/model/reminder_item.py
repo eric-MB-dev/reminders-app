@@ -1,7 +1,7 @@
 import datetime as dt
 # "dt" module contains date, time, & datetime classes
 
-import utils as fcn
+import utilities as fcn
 
 class ReminderItem:
     def __init__(self, when:dt.datetime, text, flag="", repeat="", notes=""):

@@ -1,0 +1,22 @@
+# Use this project file to install the utilites library 
+# part of the Python installation with:
+#   "pip install -e ../utils" (from project
+#  or pip install -e ." from the the utilities folder
+# where 
+#   -e makes it “editable” 
+#      (changes are immediately availble to projects that import it
+# Usage:
+#   import utils as fcn
+#   fcn.somemethod()
+#
+[project]
+name = "utils"
+version = "0.1.0"
+description = "Reusable utilities library"
+requires-python = ">=3.8"
+
+authors = [ { name = "Eric Armstrong", email = "eric@meditatebetter.com" } ]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"

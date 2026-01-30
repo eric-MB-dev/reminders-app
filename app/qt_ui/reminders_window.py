@@ -23,7 +23,6 @@ import app.table_constants as C
 
 import datetime as dt
 import config
-import utils as fcn
 
 INIT_WINDOW_WIDTH = 800
 INIT_WINDOW_HEIGHT = 300
@@ -147,7 +146,8 @@ class RemindersWindow(QMainWindow):
         self.table_view.setItemDelegateForColumn(C.DEL_COL, delegate)
         #DEGUG: print("C3: after DeleteButtonDelegate:", self.table)
         
-        # Restore saved window location. Size to fit the data
+        # Restore saved window location and user configuration settings.
+        config.load_config()
         w, h, x, y = config.get_window_geom()
         self.move(x, y)
         # ToDo: Clamp the window to the screen (for a move to a smaller screen)
