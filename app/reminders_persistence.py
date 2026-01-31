@@ -13,10 +13,10 @@ import datetime as dt
 from tkinter import messagebox, filedialog   #, simple dialogs
 from reminder_item import ReminderItem
 
-import config
+# noinspection PyPep8Naming
+import app.table_constants as C
 
 # REVISED STORAGE model: Storing notes, but not the alert schedule.
-#OLD_CSV_COL_HEADERS = ["Item", "Date", "Time", "Dys Bef", "Hrs Bef", "Mins Bef"]
 CSV_COL_HEADERS = ["Item", "Date", "Time", "Notes"]  # ToDo: + , "Repeat"
 
 # The INTERNAL data model (separate from the storage model & the display model)
@@ -43,22 +43,11 @@ class RemindersPersistence:
         pass
     
     def initialize_items_file(self):
-        # Ask user to select a folder
-        folder_path = filedialog.askdirectory(title="Choose a folder for the reminder file")
-        if not folder_path:
-            messagebox.showinfo("No Folder Selected", "File creation was canceled.")
-            return None
-        
-        # Create the full file path
-        # FUTURE
-        #   Allow user to choose csv filename
-        self.csv_path  = os.path.join(folder_path, config.DEFAULT_CSV_FILE)
-        
-        # Create the items file
+        self.csv_path = get_app_path(DEFAULT_CSV_FILE)
         with open(self.csv_path, 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(CSV_COL_HEADERS)
-        
+            writer.writerow(C.INITIAL_DATA)
         return self.csv_path
     
     # Load values stored in CSV file
