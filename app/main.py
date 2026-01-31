@@ -26,7 +26,12 @@ def main():
     else:
         manager = RemindersPersistence(config.curr_csv_path)
         domain_model = RemindersModel(data_manager=manager)
-    
+    from PySide6.QtCore import QCoreApplication
+
+    from PySide6.QtCore import QCoreApplication
+    QCoreApplication.setOrganizationName("MeditateBetter")
+    QCoreApplication.setApplicationName("ReminderSystem")
+
     app = QApplication(sys.argv)
     rtm = QtTableModelAdapter(domain_model)
     window = RemindersWindow(rtm)

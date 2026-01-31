@@ -1,6 +1,10 @@
-# --- Python ---
+# Old versions kept for scavenint
 junkyard/
 
+# Windows shortcuts
+*.lnk
+
+# --- Python ---
 __pycache__/
 *.py[cod]
 *.pyo
