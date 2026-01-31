@@ -5,24 +5,24 @@
 def sample_reminders():
     """List of Reminder objects from strings with iso-format dates & times"""
     return [
-        make_reminder_from_args("Wake up", "2025-01-01", "06:00", "Daily", "Be grateful!"),
-        make_reminder_from_args("Meditate", "2025-01-01", "06:30", "Daily", "Good fer ya!"),
+        make_reminder_from_args("", "Wake up", "2025-01-01", "06:00", "Daily", "Be grateful!"),
+        make_reminder_from_args("","Meditate", "2025-01-01", "06:30", "Daily", "Good fer ya!"),
     ]
 
 
 def sample_display_rows():
-    """List of text strings displayed in the reminder grid"""
+    """List of text strings displayed in the reminder window"""
     return [
-        ["Wake up\nBe grateful!",  "Wed", "01 Jan 2025", "6:00 am", "Past"],
-        ["Meditate\nGood fer ya!", "Wed", "01 Jan 2025", "6:30 am", "Past"],
+        ['', "Wake up\nBe grateful!",  "Wed", "01 Jan 2025", "6:00 am", "Past"],
+        ['', "Meditate\nGood fer ya!", "Wed", "01 Jan 2025", "6:30 am", "Past"],
     ]
 
 
 def sample_csv_text():
     """Text values stored in the CSV file"""
-    return """Title,Date,Time,Repeat,Notes
-Wake up,2025-01-01,06:00,Daily,Be grateful!
-Meditate,2025-01-01,06:30,Daily,Good fer ya!
+    return """Flag,Title,Date,Time,Repeat,Notes
+,Wake up,2025-01-01,06:00,Daily,Be grateful!
+,Meditate,2025-01-01,06:30,Daily,Good fer ya!
 """
 
 # --------------
@@ -30,7 +30,7 @@ Meditate,2025-01-01,06:30,Daily,Good fer ya!
 # --------------
 
 # Make a Reminder instance
-def make_reminder_from_args(title, date_str, time_str, repeat, notes):
+def make_reminder_from_args(flag, title, date_str, time_str, repeat, notes):
     import datetime as dt
     from reminder_item import ReminderItem
    
@@ -38,12 +38,12 @@ def make_reminder_from_args(title, date_str, time_str, repeat, notes):
     time_obj = dt.time.fromisoformat(time_str)
     when = dt.datetime.combine(date_obj, time_obj)
 
-    return ReminderItem(when, title, repeat, notes)
+    return ReminderItem(when, title, flag, repeat, notes)
 
 # TODO determine: Is this ever used?
 def make_reminder_from_row(row):
-    title, date_str, time_str, repeat, notes = row
-    return make_reminder_from_args(title, date_str, time_str, repeat, notes)
+    flag, title, date_str, time_str, repeat, notes = row
+    return make_reminder_from_args(flag, title, date_str, time_str, repeat, notes)
 
 def make_two_reminders():
     rows = sample_display_rows()
@@ -55,7 +55,7 @@ def reminders_from_display_rows(rows):
     from reminder_item import ReminderItem
     
     reminders = []
-    for text, date_str, time_str, repeat, notes in rows:
+    for flag, text, date_str, time_str, repeat, notes in rows:
         date_obj = dt.date.fromisoformat(date_str) if date_str else None
         time_obj = dt.time.fromisoformat(time_str) if time_str else None
         when = fcn.datetime_from_date_and_time(date_obj, time_obj)

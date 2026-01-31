@@ -12,7 +12,7 @@
 #import utils as fcn
 
 # noinspection PyPep8Naming
-import table_constants as C
+import app.table_constants as C
 
 class RemindersModel:
     def __init__(self, data_manager=None, reminder_list=None):
@@ -28,7 +28,7 @@ class RemindersModel:
 
     def display_rows(self):
         if not self._reminder_items:
-            #TODO: RETURN "No entries yet. Add some!"
+            #TODO: RETURN "No entries yet. Add some!" in an otherwise empty row
             return []
         
         return [item.to_display_row() for item in self._reminder_items]

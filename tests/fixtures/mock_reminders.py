@@ -3,15 +3,15 @@
 Data rows for UI testing (manual, and viewModel unit tests
 """
 import datetime as dt
-import utils as fcn
+import utilities as fcn
 from reminder_item import ReminderItem
 
 test_data = [  # Flag, title, date_str, time_str, repeat, notes
     [ "", "Simple reminder", "2027-01-01", "09:00", "...", "" ],
     [ "", "A rather long reminder with a lot of text in it", "2027-01-02", "10:30", "...", "" ],
     [ "", "Event with location note", "2027-01-04", "22:00", "(10 pm)", "At Ginny's house." ],
-    [ "!", "Vinyasa flow yoga", "2026-01-28", "12:45", "Weekly", "mountainview.gov/Seniors\nComm. ctr for now" ],
-    [ "", "Music w/ Gabie", "2026-02-01", "11:30", "...", ""],
+    [ "!", "Music w/ Gabie", "2026-02-01", "11:30", "...", ""],
+    [ "", "Vinyasa flow yoga", "2026-02-04", "12:45", "Weekly", "mountainview.gov/Seniors\nComm. ctr for now" ],
 ]
 
 mock_reminders = []
