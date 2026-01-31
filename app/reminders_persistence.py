@@ -16,9 +16,6 @@ from reminder_item import ReminderItem
 # noinspection PyPep8Naming
 import app.table_constants as C
 
-# REVISED STORAGE model: Storing notes, but not the alert schedule.
-CSV_COL_HEADERS = ["Item", "Date", "Time", "Notes"]  # ToDo: + , "Repeat"
-
 # The INTERNAL data model (separate from the storage model & the display model)
 class RemindersPersistence:
     # TODO: Should we pass cvs_path as a constructor arg?
@@ -46,7 +43,7 @@ class RemindersPersistence:
         self.csv_path = get_app_path(DEFAULT_CSV_FILE)
         with open(self.csv_path, 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(CSV_COL_HEADERS)
+            writer.writerow(C.CSV_COL_HEADERS)
             writer.writerow(C.INITIAL_DATA)
         return self.csv_path
     
@@ -107,19 +104,8 @@ class RemindersPersistence:
     def save(self):
         with open(self.csv_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
+            writer.writerow(C.CSV_COL_HEADERS)
             for r in self.reminders:
                 writer.writerow(r.to_csv_row())
-    def save_items(self):
-        with open(self.csv_path, 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(CSV_COL_HEADERS)
-            for i in self.reminders:
-                idate = ""
-                itime = ""
-                if i.date:
-                    idate = i.date.isoformat()
-                if i.time:
-                    itime = i.time.strftime("%H:%M") if i.time else ""
-                writer.writerow([idate, itime, i.text, i.notes])
-                
+
 #end CLASS RemindersManager

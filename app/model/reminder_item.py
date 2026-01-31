@@ -48,13 +48,18 @@ class ReminderItem:
             time_str,
             self.countdown()
         ]
-    
+
+    #TODO: Implement repeats, plus encoding & decoding for serilaization
+    #  in JSON format: {"type":"weekly","interval":1,"weekday":"Mon"}
+    #  where type->Display column, interval 1 = "every week".
+
     def to_csv_row(self):
         """Convert to a list of strings for csv writer"""
-        # csv row = [Title,Date,Time,Repeat,Notes]
+        # csv col headers defined in table_constants: [Title,Date,Time,Flag,Notes,Repeat]
         notes = fcn.encode_newlines(self.notes)  # Escape NLs
-        repeat = "" # TODO: Implement repeats
-        return [self.text, self.when.date.isoformat(), self.when.time.isoformat(), repeat, notes]
+        repeat = ""
+        return [self.text, self.when.date.isoformat(), self.when.time.isoformat(),
+                self.flag, self.notes, self.repeat]
 
     @classmethod
     def from_csv_row(cls, row):
@@ -68,7 +73,7 @@ class ReminderItem:
         when = fcn.datetime_from_date_and_time(date_obj, time_obj)
         
         # when = dt.datetime.combine(date_obj, time_obj)
-        repeat = row[3]
+        repeat = row[3]  # TODO: REVERSE 3 & 4
         notes = row[4] if len(row) > 4 else ""
         if notes:
             notes = fcn.decode_newlines(notes)     # Un-escape NLs
