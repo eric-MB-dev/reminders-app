@@ -13,8 +13,8 @@ def sample_reminders():
 def sample_display_rows():
     """List of text strings displayed in the reminder window"""
     return [
-        ['', "Wake up\nBe grateful!",  "Wed", "01 Jan 2025", "6:00 am", "Past"],
-        ['', "Meditate\nGood fer ya!", "Wed", "01 Jan 2025", "6:30 am", "Past"],
+        ['', "Wake up\nBe grateful!",  "Wed", "01 Jan 2025", "6:00 am", "Daily", "Past"],
+        ['', "Meditate\nGood fer ya!", "Wed", "01 Jan 2025", "6:30 am", "Daily", "Past"],
     ]
 
 
@@ -38,12 +38,12 @@ def make_reminder_from_args(flag, title, date_str, time_str, repeat, notes):
     time_obj = dt.time.fromisoformat(time_str)
     when = dt.datetime.combine(date_obj, time_obj)
 
-    return ReminderItem(when, title, flag, repeat, notes)
+    return ReminderItem(when, title, flag, notes, repeat)
 
 # TODO determine: Is this ever used?
 def make_reminder_from_row(row):
     flag, title, date_str, time_str, repeat, notes = row
-    return make_reminder_from_args(flag, title, date_str, time_str, repeat, notes)
+    return make_reminder_from_args(flag, title, date_str, time_str, notes, repeat)
 
 def make_two_reminders():
     rows = sample_display_rows()
@@ -55,7 +55,7 @@ def reminders_from_display_rows(rows):
     from reminder_item import ReminderItem
     
     reminders = []
-    for flag, text, date_str, time_str, repeat, notes in rows:
+    for flag, text, date_str, time_str, notes, repeat in rows:
         date_obj = dt.date.fromisoformat(date_str) if date_str else None
         time_obj = dt.time.fromisoformat(time_str) if time_str else None
         when = fcn.datetime_from_date_and_time(date_obj, time_obj)

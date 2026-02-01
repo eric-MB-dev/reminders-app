@@ -64,6 +64,7 @@ class RemindersPersistence:
             for row in reader:
                 self.reminders.append(ReminderItem.from_csv_row(row))
         return self.reminders
+    '''
     def load_items(self):
         if not os.path.exists(self.csv_path):
             if messagebox.askyesno(
@@ -74,14 +75,14 @@ class RemindersPersistence:
             #TODO: Special display when reminder-list is empty
         
         with open(self.csv_path, newline="") as file:
-            '''
+            #
             Tell PyCharm to shut up. We're expecting dates, times, ints in the file.
             idate: datetime.date | None
             itime: datetime.time | None
             days_bef: str
             hrs_bef: str
             mins_bef: str
-            '''
+            @
             reader = csv.reader(file)
             next(reader)  # skip header
             for row in reader:
@@ -96,7 +97,7 @@ class RemindersPersistence:
                 except ValueError:
                     print(f"Skipping malformed row: {row}")
         return self.reminders
-    
+    '''
     # Store reminders in user's CSV file
     # FUTURE
     #   Access curr_reminders_file from CONFIG

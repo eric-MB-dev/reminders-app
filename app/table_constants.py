@@ -15,11 +15,11 @@
 APP_NAME = "Reminders"
 # Data Columns
 # (Labels have leading spaces to simulate centering in fixed-width columns)
-VM_COLUMN_LABELS  = ["! !", "Items", "Day", "Date", "Time", "Countdown"]
-VM_COL_ALIGNMENTS = ["Ctr", "Left",  "Ctr", "Ctr",   "Ctr",  "Left" ]
-VM_COL_MIN_WIDTHS = [  8,    200,     40,    90,        72,    120 ]
-VM_COL_MAX_WIDTHS = [  8,    360,     80,   180,       148,    180 ]   # Allow for bold text
-# Column Numbers:      0       1       2      3          4       5
+VM_COLUMN_LABELS  = ["! !", "Item", "Day", "Date", "Time", "Repeat", "Countdown"]
+VM_COL_ALIGNMENTS = ["Ctr", "Left", "Ctr", "Ctr",   "Ctr",  "Left",  "Left" ]
+VM_COL_MIN_WIDTHS = [  8,    200,     40,    90,      72,     90,     120 ]
+VM_COL_MAX_WIDTHS = [  8,    360,     80,   180,     148,     90,     180 ]   # Allow for bold text
+# Column Numbers:      0       1       2      3        4       5        6
 # Data columns:
 #DESCR_COL = 0; DAY_COL = 1; DATE_COL = 2; TIME_COL = 3; COUNTDOWN_COL = 4
 
@@ -47,13 +47,15 @@ COLUMN_INDICES = {
     "DAY": 2,
     "DATE": 3,
     "TIME": 4,
-    "COUNTDOWN": 5,
-    "EDIT": 6,
-    "ALERT": 7,
-    "NEXT": 8,
-    "DEL": 9,
+    "REPEAT": 5,
+    "COUNTDOWN": 6,
+    "EDIT": 7,
+    "ALERT": 8,
+    "NEXT": 9,
+    "DEL": 10,
 }
 DESCR_COL = COLUMN_INDICES["DESCR"]
+REPEAT_COL = COLUMN_INDICES["REPEAT"]
 COUNTDOWN_COL = COLUMN_INDICES["COUNTDOWN"]
 
 # Range of button columns (inclusive) *** MAY NOT BE NEEDED ***

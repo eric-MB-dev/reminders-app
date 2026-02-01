@@ -4,16 +4,20 @@ import datetime as dt
 import utilities as fcn
 
 class ReminderItem:
-    def __init__(self, when:dt.datetime, text, flag="", repeat="", notes=""):
+    def __init__(self, when:dt.datetime, text, flag="", notes="", repeat=""):
         self.when = when          # date & time
         self.text = text          # main reminder text
         self.flag = flag          # "!" (important) or ""
-        self.repeat = repeat      # optional repetition setting
         self.notes = notes        # optional notes/location
-        
+        self.repeat = repeat      # optional repetition setting
+
         if when:
-            assert isinstance(when, dt.datetime), f"Reminder.when must be datetime, got {type(when)}: {when}"
-    
+            assert isinstance(when, dt.datetime),\
+                f"Reminder.when must be datetime, got {type(when)}: {when}"
+        if repeat:
+            # ToDo: decode repetition data?
+            pass
+
     @property
     def day_of_week(self):
         # Derived field, not stored in CSV
@@ -46,6 +50,7 @@ class ReminderItem:
             self.day_of_week,
             date_str,
             time_str,
+            self.repeat,
             self.countdown()
         ]
 
@@ -64,21 +69,21 @@ class ReminderItem:
     @classmethod
     def from_csv_row(cls, row):
         # Stored row from a csv file to a Reminder object
-        # csv row = [Title,Date,Time,Repeat,Notes]
+        # csv row = [Title,Date,Time,Flag,Notes,Repeat]
         text = row[0]
         date_obj = dt.date.fromisoformat(row[1]) if row[1] else None
         time_obj = dt.time.fromisoformat(row[2]) if row[2] else None
         
         # Convert to a datetime object for sorting
         when = fcn.datetime_from_date_and_time(date_obj, time_obj)
-        
-        # when = dt.datetime.combine(date_obj, time_obj)
-        repeat = row[3]  # TODO: REVERSE 3 & 4
+        flag = row[3]
         notes = row[4] if len(row) > 4 else ""
         if notes:
             notes = fcn.decode_newlines(notes)     # Un-escape NLs
-        # CSV row = [when:dt.datetime, text, repeat, notes]
-        return cls(when, text, repeat, notes)
+        repeat = row[5]
+
+        # ReminderItem init: when:dt.datetime, text, flag, notes, repeat
+        return cls(when, text, flag, notes, repeat)
         
     # The value to use for sorting (date/time)
     def sort_key(self):
