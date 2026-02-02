@@ -5,8 +5,8 @@
 def sample_reminders():
     """List of Reminder objects from strings with iso-format dates & times"""
     return [
-        make_reminder_from_args("", "Wake up", "2025-01-01", "06:00", "Daily", "Be grateful!"),
-        make_reminder_from_args("","Meditate", "2025-01-01", "06:30", "Daily", "Good fer ya!"),
+        make_reminder_from_args("", "Wake up", "2025-01-01", "06:00", "Be grateful!", "Daily"),
+        make_reminder_from_args("!","Meditate", "2025-01-01", "06:30", "Good fer ya!", "Daily"),
     ]
 
 
@@ -14,15 +14,15 @@ def sample_display_rows():
     """List of text strings displayed in the reminder window"""
     return [
         ['', "Wake up\nBe grateful!",  "Wed", "01 Jan 2025", "6:00 am", "Daily", "Past"],
-        ['', "Meditate\nGood fer ya!", "Wed", "01 Jan 2025", "6:30 am", "Daily", "Past"],
+        ['!', "Meditate\nGood fer ya!", "Wed", "01 Jan 2025", "6:30 am", "Daily", "Past"],
     ]
 
 
 def sample_csv_text():
-    """Text values stored in the CSV file"""
-    return """Flag,Title,Date,Time,Repeat,Notes
-,Wake up,2025-01-01,06:00,Daily,Be grateful!
-,Meditate,2025-01-01,06:30,Daily,Good fer ya!
+    """Text values stored in the CSV file (empty line at the end)"""
+    return """Title,Date,Time,Flag,Notes,Repeat
+Wake up,2025-01-01,06:00,,Be grateful!,Daily
+Meditate,2025-01-01,06:30,!,Good fer ya!,Daily
 """
 
 # --------------
@@ -30,7 +30,7 @@ def sample_csv_text():
 # --------------
 
 # Make a Reminder instance
-def make_reminder_from_args(flag, title, date_str, time_str, repeat, notes):
+def make_reminder_from_args(flag, title, date_str, time_str, notes, repeat):
     import datetime as dt
     from reminder_item import ReminderItem
    

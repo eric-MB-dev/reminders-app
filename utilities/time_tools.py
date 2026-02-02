@@ -4,6 +4,41 @@ import datetime as dt
 def get_now_in_mins():
     return dt.datetime.now().replace(second=0, microsecond=0)
 
+def iso_date_time(datetime_obj):
+    """
+    Return iso-format date & time strings from a datetime object.
+    """
+    date_str = ""
+    time_str = ""
+    if datetime_obj:
+        date_str = datetime_obj.date().isoformat()
+
+        t: dt.time = datetime_obj.time()
+        if t.hour == 0 and t.minute == 0:
+            time_str = ""
+        else:
+            time_str = t.isoformat(timespec='minutes')
+
+    return date_str, time_str
+
+def fmt_date_time(datetime_obj, date_format, time_format):
+    """
+    Return date & time strings in the designated formats from a datetime object.
+    """
+    date_str = ""
+    time_str = ""
+    if datetime_obj:
+        d: dt.date = datetime_obj.date()
+        if date_format:
+            date_str = d.strftime(date_format)
+
+        t: dt.time = datetime_obj.time()
+        if t.hour == 0 and t.minute == 0:
+            time_str = ""
+        elif time_format:
+            time_str = t.strftime(time_format).lstrip("0").lower()
+
+    return date_str, time_str
 
 def datetime_from_date_and_time(date_obj, time_obj):
     """

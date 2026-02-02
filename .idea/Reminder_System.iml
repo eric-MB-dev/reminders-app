@@ -9,6 +9,8 @@
       <sourceFolder url="file://$MODULE_DIR$/app/model" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/app/qt_ui" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/app/wx_ui" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/utilities" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/utilities/tests" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/pythonProject/.venv" />
     </content>

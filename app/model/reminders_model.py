@@ -37,4 +37,19 @@ class RemindersModel:
         reminder = self._reminder_items[row]
         reminder.flag = new_value
 
+    def sort(self):
+        # Sort in date/time order. No-date items at top. Where item has date(datetime.date). time(datetime.time), or None
+        self.reminders.sort(key=lambda r: r.sort_key())
+
+    def add(self, reminder):
+        self.reminders.append(reminder)
+        self.sort()
+
+    def remove(self, reminder):
+        self.reminders.remove(reminder)
+
+    def find_by_id(self, reminder_id):
+        """Optional: lookup helper if we add IDs later."""
+        pass
+
 #end CLASS ReminderDataModel

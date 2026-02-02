@@ -5,18 +5,31 @@ import utilities as fcn
 
 class ReminderItem:
     def __init__(self, when:dt.datetime, text, flag="", notes="", repeat=""):
-        self.when = when          # date & time
-        self.text = text          # main reminder text
-        self.flag = flag          # "!" (important) or ""
-        self.notes = notes        # optional notes/location
-        self.repeat = repeat      # optional repetition setting
-
         if when:
             assert isinstance(when, dt.datetime),\
                 f"Reminder.when must be datetime, got {type(when)}: {when}"
         if repeat:
             # ToDo: decode repetition data?
             pass
+
+        self.when: datetime = when  # date & time
+        self.text = text            # main reminder text
+        self.flag = flag            # "!" (important) or ""
+        self.notes = notes          # optional notes/location
+        self.repeat = repeat        # optional repetition setting
+    #end __init__
+
+    def __eq__(self, other):
+        """ Comparison operator for use in unit tests"""
+        if not isinstance(other, ReminderItem):
+            return False
+
+        # Return True if all relevant fields match
+        return (self.when == other.when and
+                self.text == other.text and
+                self.flag == other.flag and
+                self.notes == other.notes and
+                self.repeat == other.repeat)
 
     @property
     def day_of_week(self):
@@ -35,15 +48,18 @@ class ReminderItem:
     def to_display_row(self):
         """Time with no leading zero, Lowercase "am/pm". So: 6:00 am)"""
         import config
-        date_str = ""
-        time_str = ""
+        date_fmt = config.date_display_format
+        time_fmt = config.time_display_format
+        date_str, time_str = fcn.fmt_date_time(self.when,date_fmt, time_fmt)
+        '''
         if self.when:
-            date_str = self.when.date().strftime(config.date_display_format)
+            date_str = self.when.date().strftime()
             t = self.when.time()
             if t.hour == 0 and t.minute == 0:
                 time_str = ""
             else:
                 time_str = t.strftime(config.time_display_format).lstrip("0").lower()
+        '''
         return [
             self.flag,
             self.display_text,
@@ -61,10 +77,10 @@ class ReminderItem:
     def to_csv_row(self):
         """Convert to a list of strings for csv writer"""
         # csv col headers defined in table_constants: [Title,Date,Time,Flag,Notes,Repeat]
-        notes = fcn.encode_newlines(self.notes)  # Escape NLs
-        repeat = ""
-        return [self.text, self.when.date.isoformat(), self.when.time.isoformat(),
-                self.flag, self.notes, self.repeat]
+        date_str, time_str = fcn.iso_date_time(self.when)
+        notes_str = fcn.encode_newlines(self.notes)  # Escape NLs
+        repeat_str = self.repeat  # TODO: ENCODE REPETITION (it's the display value for now)
+        return [self.text, date_str, time_str, self.flag, notes_str, repeat_str]
 
     @classmethod
     def from_csv_row(cls, row):
@@ -87,7 +103,10 @@ class ReminderItem:
         
     # The value to use for sorting (date/time)
     def sort_key(self):
-        return self.when
+        # False (0) comes before True (1)
+        # Put items where 'when' is None at the top
+        # (when it exists, sort on the 'when' value)
+        return (self.when is not None, self.when)
 
     def countdown(self):
         if not self.when:

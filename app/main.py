@@ -21,7 +21,7 @@ def main():
     """
     if USE_MOCK_DATA:
         from tests.fixtures.mock_reminders import mock_reminders
-        mock_data = C.INITIAL_DATA + mock_reminders
+        mock_data = mock_reminders
         domain_model = RemindersModel(reminder_list=mock_reminders)
     else:
         manager = RemindersPersistence(config.curr_csv_path)
