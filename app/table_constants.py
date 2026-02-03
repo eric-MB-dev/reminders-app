@@ -16,7 +16,7 @@ APP_NAME = "Reminders"
 # Data Columns
 # (Labels have leading spaces to simulate centering in fixed-width columns)
 VM_COLUMN_LABELS  = ["! !", "Item", "Day", "Date", "Time", "Repeat", "Countdown"]
-VM_COL_ALIGNMENTS = ["Ctr", "Left", "Ctr", "Ctr",   "Ctr",  "Left",  "Left" ]
+VM_COL_ALIGNMENTS = ["Ctr", "Left", "Ctr", "Ctr",   "Ctr",  "Ctr",  "Left" ]
 VM_COL_MIN_WIDTHS = [  8,    200,     40,    90,      72,     90,     120 ]
 VM_COL_MAX_WIDTHS = [  8,    360,     80,   180,     148,     90,     180 ]   # Allow for bold text
 # Column Numbers:      0       1       2      3        4       5        6

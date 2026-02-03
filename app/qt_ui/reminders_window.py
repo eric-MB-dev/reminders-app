@@ -10,8 +10,8 @@
 # noinspection PyUnresolvedReferences
 from PySide6.QtWidgets import (QMainWindow, QWidget, QAbstractItemView,
                                QHBoxLayout, QVBoxLayout, QTableView,
-                               QApplication, QSizePolicy, QPushButton,
-                               QStyledItemDelegate, QHeaderView, QLabel
+                               QApplication, QSizePolicy, QPushButton, QLabel,
+                               QStyledItemDelegate, QHeaderView, QTableWidgetItem,
                                )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QFontMetrics
@@ -64,14 +64,14 @@ class RemindersWindow(QMainWindow):
             QSizePolicy.Policy.Preferred,
             QSizePolicy.Policy.Preferred
         )
-        #
         container_layout.addWidget(self.table_view)
      
         # Column alignments
         for col, alignment in enumerate(C.ALL_COL_ALIGNMENTS):
             if alignment == "Ctr":
+                # Set centered data cells
                 self.table_view.setItemDelegateForColumn(col, CenteredDelegate())
-        
+
         # Data-row font
         cell_font = self.table_view.font()
         cell_font.setPointSize(config.cell_font_size)

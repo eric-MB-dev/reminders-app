@@ -148,7 +148,9 @@ class QtTableModelAdapter(QAbstractTableModel):
         
         if role == Qt.TextAlignmentRole:  # type: ignore[attr-defined]
             if C.ALL_COL_ALIGNMENTS[section] == "Ctr":
-                return Qt.AlignCenter
+                return Qt.AlignmentFlag.AlignCenter
+            else:
+                return Qt.AlignmentFlag.AlignLeft
             
         return None
 
