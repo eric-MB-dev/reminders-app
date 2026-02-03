@@ -20,6 +20,10 @@ import app.table_constants as C
 class RemindersPersistence:
 
     def __init__(self, csv_path):
+        """
+        csv_PATH is the argument, to allow testing with different paths.
+        The default folder remains the same for all csv files, if multiple
+        """
         self.csv_path = csv_path
         self.reminders = []
         self.load()

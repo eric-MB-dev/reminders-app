@@ -96,7 +96,10 @@ class ReminderItem:
         notes = row[4] if len(row) > 4 else ""
         if notes:
             notes = fcn.decode_newlines(notes)     # Un-escape NLs
-        repeat = row[5]
+        repeat = row[5] if len(row) > 5 else ""
+        if repeat:
+            #TODO: Decode JSON repeat string
+            pass
 
         # ReminderItem init: when:dt.datetime, text, flag, notes, repeat
         return cls(when, text, flag, notes, repeat)
@@ -111,16 +114,19 @@ class ReminderItem:
     def countdown(self):
         if not self.when:
             return ""
-        
+
+        delta = self.when.date() - dt.date.today()
+        days = delta.days
+
+        # today_delta includes Minutes & hours
         now = dt.datetime.now()
-        delta = self.when - now
+        today_delta = self.when - now
         
         # Past
-        days = delta.days
         if days < 0:
             return 'Past'
 
-        seconds = delta.total_seconds()
+        seconds = today_delta.total_seconds()
         if seconds < 0:
             if seconds > -3600:
                 # Within the past hour
@@ -135,7 +141,7 @@ class ReminderItem:
             return "NOW"
         
         # Today, or tomorrow
-        # TODO 1/2: Replace DATE field with these
+        # TODO: Replace DATE field with these? & return countdown = ""
         '''
         elif days == 0 :
             return "TODAY"
@@ -143,8 +149,10 @@ class ReminderItem:
             return "TOMORROW"
         '''
         # Tomorrow
+        #print(f"Delta: {delta}, delta.days: {delta.days}")
+        #print(f"Today: {dt.date.today()}, Item date: {self.when.date()}")
+        #print(f"Days: {days}")
         if days == 1:
-            # TODO 2/2: Change this to an empty string
             return "TOMORROW"
         
         # Today

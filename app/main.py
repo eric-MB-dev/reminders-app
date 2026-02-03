@@ -3,6 +3,7 @@ import sys
 from PySide6.QtWidgets import QApplication
 
 import app.config as config
+import utilities as fcn
 
 from app.qt_ui.reminders_window       import RemindersWindow
 from app.qt_ui.qt_table_model_adapter import QtTableModelAdapter
@@ -12,25 +13,27 @@ from app.model.reminders_model        import RemindersModel
 # noinspection PyPep8Naming
 import table_constants as C
 
-USE_MOCK_DATA = True  # TODO: Set to False for production version
+USE_MOCK_DATA = False  # Set to True for GUI testing
 
 def main():
     """
     Confguration sequence:
     RemindersPersistence → RemindersModel → RemindersTableModel → RemindersWindow
     """
-    if USE_MOCK_DATA:
-        from tests.fixtures.mock_reminders import mock_reminders
-        mock_data = mock_reminders
-        domain_model = RemindersModel(reminder_list=mock_reminders)
-    else:
-        manager = RemindersPersistence(config.curr_csv_path)
-        domain_model = RemindersModel(data_manager=manager)
-    from PySide6.QtCore import QCoreApplication
 
+    # Initialize the folder hierarchy for application data files
     from PySide6.QtCore import QCoreApplication
     QCoreApplication.setOrganizationName("MeditateBetter")
     QCoreApplication.setApplicationName("ReminderSystem")
+
+    if USE_MOCK_DATA:
+        from tests.fixtures.mock_reminders import mock_reminders
+        domain_model = RemindersModel(reminder_list=mock_reminders)
+    else:
+        csv_path = fcn.get_app_path(config.curr_csv_file)
+        #print(f"csv_path: {csv_path}")
+        manager = RemindersPersistence(csv_path)
+        domain_model = RemindersModel(data_manager=manager)
 
     app = QApplication(sys.argv)
     rtm = QtTableModelAdapter(domain_model)

@@ -19,7 +19,7 @@ class RemindersModel:
         if reminder_list is not None:
             self._reminder_items = reminder_list
         elif data_manager is not None:
-            self._reminder_items = data_manager.load_reminders()
+            self._reminder_items = data_manager.load()
         else:
             raise ValueError("Need reminder_list or data_manager")
 
