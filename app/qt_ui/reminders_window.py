@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QAbstractItemView,
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QFontMetrics
 
+from date_banner import DateBannerWindow
 from delegates.centered_delegate import CenteredDelegate
 
 # noinspection PyPep8Naming
@@ -30,7 +31,7 @@ INIT_WINDOW_HEIGHT = 300
 MAX_WINDOW_WIDTH = 3000  # WAS = sum(C.VM_COLUMN_WIDTHS) + GRID_STRUCTURE_PADDING
 MAX_WINDOW_HEIGHT = 800
 
-class RemindersWindow(QMainWindow):
+class RemindersWindow(DateBannerWindow):
     def __init__(self, table_model):
         #print(">>> Reminders init() Started")
         
@@ -102,20 +103,11 @@ class RemindersWindow(QMainWindow):
         add_btn = QPushButton("Add Entry")
         exit_btn = QPushButton("Exit")
         #
-        today = dt.date.today()
-        day_format = f"%a, {config.date_display_format}"
-        day_and_date = today.strftime(day_format)   #("%a, %d %b %Y")
-        date_label = QLabel(day_and_date+"  ")
-        font = date_label.font()
-        font.setBold(True)
-        font.setPointSize(font.pointSize() + 1)
-        date_label.setFont(font)
-        #
         btn_row.addWidget(gear_btn)
         btn_row.addStretch(1)
         btn_row.addWidget(add_btn)
         btn_row.addStretch(1)
-        btn_row.addWidget(date_label)
+        # btn_row.addWidget(date_label)
         btn_row.addWidget(exit_btn)
         
         # --- Final window setup ---
