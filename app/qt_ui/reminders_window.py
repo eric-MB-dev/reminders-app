@@ -50,14 +50,17 @@ class RemindersWindow(DateBannerWindow):
         self.table_model = table_model      # My domain model = table_model.reminders_model
         self.table_view.setModel(self.table_model)
 
-        # TUrn off cell selections & background highlighting on hover
+        # TUrn off cell selections &  highlighting on hover
         self.table_view.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
-        self.table_view.setTextElideMode(Qt.TextElideMode.ElideRight) # 3 dots for too much cell data
+        self.table_view.setMouseTracking(False)
         self.table_view.setStyleSheet("""
             QTableView::item:hover {
                 background-color: transparent;
             }
         """)
+
+        # Add 3 dots to the end of a cell with too much data to display
+        self.table_view.setTextElideMode(Qt.TextElideMode.ElideRight)
 
         # Allow for vertical row-expansion via our descr-column delegate
         vh = self.table_view.verticalHeader()
@@ -99,11 +102,12 @@ class RemindersWindow(DateBannerWindow):
         # Now that fonts are established, turn off Qt's row-height minimums.
         # Install Left-justified delegate for item description & countdown columns
         from delegates.left_justified_delegate import LeftJustifiedDelegate
+        left_justified_delegate = LeftJustifiedDelegate(self.table_view)
         self.table_view.setItemDelegateForColumn(
-            C.DESCR_COL, LeftJustifiedDelegate()
+            C.DESCR_COL, left_justified_delegate
         )
         self.table_view.setItemDelegateForColumn(
-            C.COUNTDOWN_COL, LeftJustifiedDelegate()
+            C.COUNTDOWN_COL, left_justified_delegate
         )
     
         # Bottom BUTTON-BAR BUTTONS

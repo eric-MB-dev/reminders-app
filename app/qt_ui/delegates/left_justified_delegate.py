@@ -17,6 +17,10 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
     """
     Determine row height and expand rows as needed, and
     """
+    def __init__(self, parent_table):
+        super().__init__(parent_table)
+        self.parent_table = parent_table # Now we can talk to the table!
+
     def initStyleOption(self, option, index):
         """This code runs on non-critical rows, because paint() doesn't change it"""
         super().initStyleOption(option, index)
@@ -42,11 +46,25 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
     
     # Bold the first line only for a critical-item reminder
     def paint(self, painter, option, index):
-        
-        # If not critical, fall back to normal painting
+        # --- INSTRUMENTATION ---
+        actual_row_h = self.parent_table.rowHeight(index.row())
+        rect_h = option.rect.height()
+
+        # Only log if there's a mismatch or if the row is 'tall'
+        #if rect_h != actual_row_h or rect_h > 100:
+        #    print(f"[DEBUG] Paint Row {index.row()}:")
+        #    print(f"  > Actual Row Height: {actual_row_h}")
+        #    print(f"  > Option Rect Height: {rect_h}")
+        #    print(f"  > State: {option.state}")  # Tells us if it's hovered, active, etc.
+        # ------------------------
+
+        # If not flagged as critical, paint normally within the cell's max-height rectangle
         is_critical = index.model().is_critical(index.row())
         if not is_critical:
+            painter.save()
+            painter.setClipRect(option.rect)  # The magic wall
             super().paint(painter, option, index)
+            painter.restore()
             return
         
         if index.column() != C.DESCR_COL:
@@ -101,9 +119,15 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         painter.drawText(x, y + fm_bold.ascent(), first)
         y += fm_bold.height()
 
-        # Draw remaining lines
+        # Draw remaining lines in maximum-size cell rectangle
+        actual_row_h = self.parent_table.rowHeight(index.row())
+        cell_limit = option.rect.top() + actual_row_h
+
         painter.setFont(normal_font)
         for line in remainder:
+            if y + fm_norm.ascent() > cell_limit:
+                break  # Stop drawing at bottom of the cell rectangle
+
             painter.drawText(x, y + fm_norm.ascent(), line)
             y += fm_norm.height()
 
