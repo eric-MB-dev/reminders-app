@@ -9,7 +9,7 @@
 # Qt is a C++ library, methods are injected dynamically, sp PyCharm's static type checks fail.
 # noinspection PyUnresolvedReferences
 from PySide6.QtWidgets import (QMainWindow, QWidget, QAbstractItemView,
-                               QHBoxLayout, QVBoxLayout, QTableView,
+                               QHBoxLayout, QVBoxLayout, QTableView, QLayout,
                                QApplication, QSizePolicy, QPushButton, QLabel,
                                QStyledItemDelegate, QHeaderView, QTableWidgetItem,
                                )
@@ -17,6 +17,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QFontMetrics
 
 from date_banner import DateBannerWindow
+from auto_resizing_table_view import AutoResizingTableView
 from delegates.centered_delegate import CenteredDelegate
 
 # noinspection PyPep8Naming
@@ -45,12 +46,13 @@ class RemindersWindow(DateBannerWindow):
         
         # Reminders Table
         #self.table_view = QtRowAwareTableView()      # The Qt view model
-        self.table_view = QTableView()
+        self.table_view = AutoResizingTableView()
         self.table_model = table_model      # My domain model = table_model.reminders_model
         self.table_view.setModel(self.table_model)
 
         # TUrn off cell selections & background highlighting on hover
         self.table_view.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        self.table_view.setTextElideMode(Qt.TextElideMode.ElideRight) # 3 dots for too much cell data
         self.table_view.setStyleSheet("""
             QTableView::item:hover {
                 background-color: transparent;
@@ -67,7 +69,8 @@ class RemindersWindow(DateBannerWindow):
         container_layout = QVBoxLayout(main_container)
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setSpacing(0)
-        
+        #container_layout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
+
         # Expand table to fill available space
         self.table_view.setSizePolicy(
             QSizePolicy.Policy.Preferred,
@@ -120,10 +123,11 @@ class RemindersWindow(DateBannerWindow):
         
         # --- Final window setup ---
         self.setCentralWidget(main_container)
+        # container_layout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
         
         # Resize window to fit table width
-        hint = self.table_view.sizeHint()
-        self.resize(hint.width(), hint.height() + 50)
+        #int = self.table_view.sizeHint()
+        #self.resize(hint.width(), hint.height() + 50)
         
         # Basic table behavior
         self.table_view.setAlternatingRowColors(True)
@@ -169,17 +173,54 @@ class RemindersWindow(DateBannerWindow):
         QTimer.singleShot(0, self.refresh_layout)  # schedule initial layout refresh once
 
     def refresh_layout(self):
-        #print(">>> refresh_layout() Started")
-        self.table_view.resizeColumnsToContents()
-        self._apply_column_sizing()  # after resizeToContents, so "natural" value is correct
-        
-        # Tell Qt to resize rows and adjust the window width
+        # Size columns and rows
+        self._apply_column_sizing()
         self.table_view.resizeRowsToContents()
-        self.adjust_window_width_to_columns()
+        self._apply_row_height_limits()   # Cap row heights
+
+        # Tell window to tell the window that sizeHint has changed
+        self.table_view.updateGeometry()  # Refresh the sizeHint
+
+        # --- INSTRUMENTATION START ---
+        #t_hint = self.table_view.sizeHint()
+        #print(f"\n[DEBUG] Table Hint: {t_hint.width()}x{t_hint.height()}")
+        #print(f"[DEBUG] Window Size BEFORE: {self.width()}x{self.height()}")
+        # --- INSTRUMENTATION END ---
+
+        if self.layout():
+            # Lock the layout to its new, smaller sizeHint
+            self.layout().setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
+
+        self.adjustSize()
+
+        # --- INSTRUMENTATION START ---
+        #print(f"[DEBUG] Window Size AFTER:  {self.width()}x{self.height()}")
+        # --- INSTRUMENTATION END ---
 
         # Initial layout has finished. Enable RESIZE and keep it from happening again.
         self._initial_layout_done = True
         self._suppress_qt_events = False
+
+
+    def _apply_row_height_limits(self):
+        # Calculate the max height for 3 lines
+        metrics = self.table_view.fontMetrics()
+        # height() is for one line; lineSpacing() is the distance between baselines
+        max_h = (metrics.lineSpacing() * 2) + metrics.height() + 4  # 3 lines + margin for cell border
+
+        v_header = self.table_view.verticalHeader()
+
+        # TEMPORARILY allow manual resizing
+        # If the mode is 'ResizeToContents', manual resizeSection() calls are ignored.
+        old_mode = v_header.sectionsClickable()  # A placeholder to show we're changing state
+        v_header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+
+        # Iterate and cap
+        for row in range(self.table_model.rowCount()):
+            current_h = self.table_view.rowHeight(row)
+            if current_h > max_h:
+                v_header.resizeSection(row, max_h)
+
 
     #--------------------------------
     # Item Action-button behaviours
@@ -307,26 +348,6 @@ class RemindersWindow(DateBannerWindow):
         
         # Clamp
         final = max(min_w, min(padded, max_w))
-        
         view.setColumnWidth(C.DESCR_COL, final)
 
-    def adjust_window_width_to_columns(self):
-        #print("\n>>> ADJUST WINDOW WIDTH")
-        widths = []
-        for c in range(self.table_model.columnCount()):
-            w = self.table_view.columnWidth(c)
-            widths.append(w)
-        total = sum(widths)
-        
-        vh_w = self.table_view.verticalHeader().width()
-        frame = 2 * self.table_view.frameWidth()
-        
-        scroll_w = 0
-        if self.table_view.verticalScrollBar().isVisible():
-            scroll_w = self.table_view.verticalScrollBar().sizeHint().width()
-        
-        total += vh_w + frame + scroll_w
-        
-        self.resize(total, self.height())
-        
 #endClass RemindersWindow
