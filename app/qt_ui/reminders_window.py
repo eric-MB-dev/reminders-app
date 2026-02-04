@@ -48,7 +48,15 @@ class RemindersWindow(DateBannerWindow):
         self.table_view = QTableView()
         self.table_model = table_model      # My domain model = table_model.reminders_model
         self.table_view.setModel(self.table_model)
-        
+
+        # TUrn off cell selections & background highlighting on hover
+        self.table_view.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        self.table_view.setStyleSheet("""
+            QTableView::item:hover {
+                background-color: transparent;
+            }
+        """)
+
         # Allow for vertical row-expansion via our descr-column delegate
         vh = self.table_view.verticalHeader()
         vh.setDefaultSectionSize(16)

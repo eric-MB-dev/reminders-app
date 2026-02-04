@@ -39,7 +39,7 @@ class DateBannerWindow(QMainWindow):
         self.date_label.setStyleSheet("""
             QLabel {
                 margin-top: 0px;
-                margin-bottom: 5px; 
+                margin-bottom: 6px; 
                 padding-top: 0px;
                 color: #333;
             }
