@@ -4,7 +4,7 @@ from PySide6.QtGui import QFont
 
 import datetime as dt
 
-import config
+from app.config import config
 
 class DateBannerWindow(QMainWindow):
     def __init__(self):

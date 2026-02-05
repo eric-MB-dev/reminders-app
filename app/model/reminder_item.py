@@ -47,7 +47,7 @@ class ReminderItem:
     
     def to_display_row(self):
         """Time with no leading zero, Lowercase "am/pm". So: 6:00 am)"""
-        import config
+        from app.config import config
         date_fmt = config.date_display_format
         time_fmt = config.time_display_format
         date_str, time_str = fcn.fmt_date_time(self.when,date_fmt, time_fmt)

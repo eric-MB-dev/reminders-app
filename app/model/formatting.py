@@ -28,9 +28,9 @@ def format_day_of_week(dt):
 
 def formatted_date_time(dt):
     """Return (date_str, time_str) using config-defined formats."""
-    import app.config
-    date_fmt = app.config.date_display_format
-    time_fmt = app.config.time_display_format
+    from app.config import config
+    date_fmt = config.date_display_format
+    time_fmt = config.time_display_format
     return dt.strftime(date_fmt), dt.strftime(time_fmt)
 
 

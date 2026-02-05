@@ -2,7 +2,7 @@
 import sys
 from PySide6.QtWidgets import QApplication
 
-import app.config as config
+from app.config import config
 import utilities as fcn
 
 from app.qt_ui.reminders_window       import RemindersWindow

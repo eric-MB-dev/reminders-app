@@ -17,8 +17,8 @@ test_data = [  # Flag, title, date_str, time_str, notes, repeat
 mock_reminders = []
 for row in test_data:
     flag, title, date_str, time_str, notes, repeat = row
+    when = fcn.datetime_from_date_and_time(date_obj, time_obj)
     date_obj = dt.date.fromisoformat(date_str) if date_str else None
     time_obj = dt.time.fromisoformat(time_str) if time_str else None
-    when = fcn.datetime_from_date_and_time(date_obj, time_obj)
     mock_reminders.append(ReminderItem(when, title, flag, notes, repeat))
 

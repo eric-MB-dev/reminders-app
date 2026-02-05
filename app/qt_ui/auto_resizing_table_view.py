@@ -55,7 +55,7 @@ class AutoResizingTableView(QTableView):
         #print(f"\n[DEBUG] QTableView.sizeHint() Calculated:")
         #print(f"  > Columns Widths: {sum(col_details)} {col_details}")
         #print(f"  > Decorators: V-Header:{v_header_w}, Frame:{frame_w}, V-Scroll:{v_bar_w}")
-        print(f"  > Result: {total_w}x{total_h}")
+        #print(f"  > Result: {total_w}x{total_h}")
 
         return QSize(total_w, total_h)
 

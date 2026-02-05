@@ -23,8 +23,7 @@ from delegates.centered_delegate import CenteredDelegate
 # noinspection PyPep8Naming
 import app.table_constants as C
 
-import datetime as dt
-import config
+from app.config import config
 
 INIT_WINDOW_WIDTH = 800
 INIT_WINDOW_HEIGHT = 300
@@ -156,7 +155,7 @@ class RemindersWindow(DateBannerWindow):
         
         # Restore saved window location and user configuration settings.
         config.load_config()
-        w, h, x, y = config.get_window_geom()
+        (w, h, x, y) = config.window_geom
         self.move(x, y)
         # ToDo: Clamp the window to the screen (for a move to a smaller screen)
         '''
@@ -245,7 +244,7 @@ class RemindersWindow(DateBannerWindow):
         w = size.width()
         h = size.height()
         
-        config.encode_geometry(w, h, x, y)
+        config.window_geom = (w, h, x, y)
         config.save_config()
         
         QApplication.quit()
