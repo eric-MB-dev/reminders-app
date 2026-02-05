@@ -3,16 +3,19 @@
 # USAGE:
 # noinspection PyPep8Naming
 # import app.table_constants as C
-#
-# Reference:
-#   C.COLUMN_LABELS
-#   C.COLUMN_WIDTHS
-#   C.DESCR_COL
-#   C.EDIT_COL
-#   C.ALL_COLUMNS
 # ===========================================================
 
 APP_NAME = "Reminders"
+
+DEFAULT_CELL_FONT_SIZE = 11  # Header font set to one less in config
+
+DEFAULT_GEOM_STR = "582x278, 450x0"  # Initial size (wxh) and position (x,y)
+INITIAL_DISPLAY_DATA = ["!", "No entries yet. Add some!", "", "", "", ""]
+
+CSV_COL_HEADERS =  ["Title", "Date", "Time", "Flag", "Notes", "Repeat"]
+INITIAL_CSV_DATA = ["No entries yet. Add some!", "", "", "!", "", ""]
+
+#################### TODO: REPLACE THESE DEFINITIONS WITH THOSE BELOW #############
 # Data Columns
 # (Labels have leading spaces to simulate centering in fixed-width columns)
 VM_COLUMN_LABELS  = ["! !", "Item", "Day", "Date", "Time", "Repeat", "Countdown"]
@@ -20,11 +23,6 @@ VM_COL_ALIGNMENTS = ["Ctr", "Left", "Ctr", "Ctr",   "Ctr",  "Ctr",  "Left" ]
 VM_COL_MIN_WIDTHS = [  8,    200,     40,    90,      72,     90,     120 ]
 VM_COL_MAX_WIDTHS = [  8,    360,     80,   180,     148,     90,     180 ]   # Allow for bold text
 # Column Numbers:      0       1       2      3        4       5        6
-# Data columns:
-#DESCR_COL = 0; DAY_COL = 1; DATE_COL = 2; TIME_COL = 3; COUNTDOWN_COL = 4
-
-#MIN_DESCR_WIDTH = 160
-#MAX_DESCR_WIDTH = 360
 
 # Button columns
 UI_BUTTON_COLUMNS = 4
@@ -34,8 +32,6 @@ UI_BUTTON_COL_WIDTHS = [35, 42, 35, 35]
 
 NUM_DATA_COLS = len(VM_COLUMN_LABELS)
 NUM_BUTTON_COLS = len(UI_BUTTON_LABELS)
-
-#EDIT_COL = 5; ALERT_COL = 6; NEXT_COL = 7; DEL_COL = 8
 
 ALL_COL_LABELS = VM_COLUMN_LABELS + UI_BUTTON_LABELS
 ALL_COL_MIN_WIDTHS = VM_COL_MIN_WIDTHS + UI_BUTTON_COL_WIDTHS
@@ -67,14 +63,55 @@ NEXT_COL  = COLUMN_INDICES["NEXT"]
 LAST_COL  = DEL_COL = COLUMN_INDICES["DEL"]
 UI_BUTTON_RANGE = range(FIRST_BTN_COL, LAST_COL + 1)
 
-# Derived values *** MAY NOT BE NEEDED ***
-#INIT_DESCR_WIDTH = VM_COL_MIN_WIDTHS[DESCR_COL]
-#TOTAL_OTHER_COLS = sum(VM_COL_MIN_WIDTHS) - INIT_DESCR_WIDTH
+############################
+###  COLUMN DEFINITIONS  ###
+############################
+from dataclasses import dataclass
+from typing import List
 
-DEFAULT_CELL_FONT_SIZE = 11  # Header font set to one less in config
+@dataclass
+class ColDef:
+    id: str  # Internal ID (e.g., "DESCR")
+    label: str  # Header text
+    align: str  # "Left", "Ctr", "Right"
+    min_w: int
+    max_w: int
+    visible: bool = True  # Default to visible
 
-DEFAULT_GEOM_STR = "582x278, 450x0"  # Initial size (wxh) and position (x,y)
-INITIAL_DISPLAY_DATA = ["!", "No entries yet. Add some!", "", "", "", ""]
+# --- 1. Master Definitions (The "Kitchen Sink") ---
+_MASTER_COLS = [
+    # Data Columns
+    ColDef("FLAG", "! !", "Ctr", 8, 8),
+    ColDef("DESCR", "Item", "Left", 200, 360),
+    ColDef("DAY", "Day", "Ctr", 40, 80),
+    ColDef("DATE", "Date", "Ctr", 90, 180),
+    ColDef("TIME", "Time", "Ctr", 72, 148),
+    # Hide repeat column to shrink the window without breaking logic
+    ColDef("REPEAT", "Repeat", "Ctr", 90, 90, visible=False),
+    ColDef("COUNTDOWN", "Count", "Left", 120, 180),
 
-CSV_COL_HEADERS =  ["Title", "Date", "Time", "Flag", "Notes", "Repeat"]
-INITIAL_CSV_DATA = ["No entries yet. Add some!", "", "", "!", "", ""]
+    # Action Columns
+    ColDef("EDIT", "Edit", "Ctr", 30, 30),
+    ColDef("ALERT", "Alerts", "Ctr", 42, 42),
+    ColDef("NEXT", "Nxt", "Ctr",35, 35),
+    ColDef("DEL", "Del", "Ctr", 35, 35),
+]
+
+# --- 2. The Active Set (The "Source of Truth" for the View) ---
+# This list only contains columns where visible=True
+ALL_COLS: List[ColDef] = [c for c in _MASTER_COLS if c.visible]
+
+# --- 3. Dynamic Index Mapping ---
+# This automatically creates C.DESCR_IDX, C.TIME_IDX, etc.
+# based on their POSITION in the active ALL_COLS list.
+for i, col in enumerate(ALL_COLS):
+    globals()[f"{col.id}_IDX"] = i
+
+# --- 4. Convenience Logic ---
+def get_align(idx: int):
+    """Returns Qt alignment flag based on our string definitions."""
+    from PyQt6.QtCore import Qt
+    align_str = ALL_COLS[idx].align
+    if align_str == "Left": return Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+    if align_str == "Ctr":  return Qt.AlignmentFlag.AlignCenter
+    return Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter

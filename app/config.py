@@ -19,11 +19,10 @@ class AppConfig:
         # Default formats (to be overridden by user settings)
         self.date_display_format = "%d %b %Y"  # My 01 Han 202t format (used in testing). "%m/%d/%y" is 01/01/2026
         self.time_display_format = "%I:%M %p"   # for 12‑hr time. "%H:%M" for 24‑hr time.
-        #window_geometry = "582x278+113+0"  # Sice & location of main window
 
-        # TODO: Add font-size selection to config dialog
-        self.cell_font_size = C.DEFAULT_CELL_FONT_SIZE
-        self.hdr_font_size = self.cell_font_size - 1
+        self._hdr_font_size = 9  # The default. Adjusted to match the cell font
+        self._cell_font_size = C.DEFAULT_CELL_FONT_SIZE
+
         '''
         from dataclasses import dataclass
         @dataclass
@@ -34,6 +33,19 @@ class AppConfig:
             h: int      # Height
          '''
         self._geom_str = C.DEFAULT_GEOM_STR
+
+    @property
+    def cell_font_size(self):
+        return self._cell_font_size
+
+    @cell_font_size.setter
+    def cell_font_size(self, value):
+        self._cell_font_size = value
+        self._hdr_font_size = self._cell_font_size - 1
+
+    @property
+    def hdr_font_size(self):
+        return self._hdr_font_size
 
     @property
     def window_geom(self):
