@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex
 from PySide6.QtGui import QFont, QIcon # QFontMetrics,
 
 from app.model.reminders_model import RemindersModel
+from app.config import config
 
 # noinspection PyPep8Naming
 import table_constants as C
@@ -144,15 +145,22 @@ class QtTableModelAdapter(QAbstractTableModel):
             return None
         
         if role == Qt.DisplayRole:  # type: ignore[attr-defined]
-            return C.ALL_COL_LABELS[section]
-        
+            return C.ALL_COLS[section].label
+            #return C.ALL_COL_LABELS[section]
+
+        if role == Qt.ItemDataRole.FontRole:
+            font = QFont()
+            font.setPixelSize(config.hdr_font_px)
+            font.setBold(True)
+            return font
+
         if role == Qt.TextAlignmentRole:  # type: ignore[attr-defined]
             if C.ALL_COL_ALIGNMENTS[section] == "Ctr":
                 return Qt.AlignmentFlag.AlignCenter
             else:
                 return Qt.AlignmentFlag.AlignLeft
             
-        return None
+        return super().headerData(section, orientation, role)
 
     def toggle_flag(self, row):
         # Flip the UI state

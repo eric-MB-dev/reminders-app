@@ -15,13 +15,15 @@ INITIAL_DISPLAY_DATA = ["!", "No entries yet. Add some!", "", "", "", ""]
 CSV_COL_HEADERS =  ["Title", "Date", "Time", "Flag", "Notes", "Repeat"]
 INITIAL_CSV_DATA = ["No entries yet. Add some!", "", "", "!", "", ""]
 
-#################### TODO: REPLACE THESE DEFINITIONS WITH THOSE BELOW #############
+###################
+# OLD DEFINITIONS #
+###################
 # Data Columns
 # (Labels have leading spaces to simulate centering in fixed-width columns)
 VM_COLUMN_LABELS  = ["! !", "Item", "Day", "Date", "Time", "Repeat", "Countdown"]
 VM_COL_ALIGNMENTS = ["Ctr", "Left", "Ctr", "Ctr",   "Ctr",  "Ctr",  "Left" ]
-VM_COL_MIN_WIDTHS = [  8,    200,     40,    90,      72,     90,     120 ]
-VM_COL_MAX_WIDTHS = [  8,    360,     80,   180,     148,     90,     180 ]   # Allow for bold text
+VM_COL_MIN_WIDTHS = [  8,    200,     40,    90,      72,     66,     120 ]
+VM_COL_MAX_WIDTHS = [  8,    360,     80,   180,     148,     66,     180 ]   # Allow for bold text
 # Column Numbers:      0       1       2      3        4       5        6
 
 # Button columns
@@ -87,7 +89,7 @@ _MASTER_COLS = [
     ColDef("DATE", "Date", "Ctr", 90, 180),
     ColDef("TIME", "Time", "Ctr", 72, 148),
     # Hide repeat column to shrink the window without breaking logic
-    ColDef("REPEAT", "Repeat", "Ctr", 90, 90, visible=False),
+    ColDef("REPEAT", "Repeat", "Ctr", 66, 66), #, visible=False),
     ColDef("COUNTDOWN", "Count", "Left", 120, 180),
 
     # Action Columns
