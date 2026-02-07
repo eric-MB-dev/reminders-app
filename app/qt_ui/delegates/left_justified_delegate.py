@@ -65,17 +65,26 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         #    print(f"  > State: {option.state}")  # Tells us if it's hovered, active, etc.
         # ------------------------
 
+        # Fonts & metrics
+        bold_font = QFont(option.font)
+        bold_font.setBold(True)
+        norm_font = QFont(option.font)
+        norm_font.setBold(False)
+        fm_bold = QFontMetrics(bold_font)
+        fm_norm = QFontMetrics(norm_font)
+
         # If not flagged as critical, paint normally within the cell's max-height rectangle
         is_critical = index.model().is_critical(index.row())
         if not is_critical:
             painter.save()
+            painter.setFont(norm_font)
             painter.setClipRect(option.rect)  # The magic wall
             super().paint(painter, option, index)
             painter.restore()
             return
-        
+
         if index.column() != C.DESCR_COL:
-            # Not the description column, so no bolding logic
+            # Not the description column, so no first-line bolding logic
             super().paint(painter, option, index)
             return
         
@@ -90,15 +99,6 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         remainder = lines[1:]
         
         painter.save()
-
-        # Fonts & metrics
-        bold_font = option.font
-        bold_font.setBold(True)
-        normal_font = QFont(option.font)
-        normal_font.setBold(False)
-
-        fm_bold = QFontMetrics(bold_font)
-        fm_norm = QFontMetrics(normal_font)
 
         # Compute total text height
         total_height = fm_bold.height() + len(remainder) * fm_norm.height()
@@ -123,19 +123,38 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
 
         # Draw first (bold) line
         painter.setFont(bold_font)
-        painter.drawText(x, y + fm_bold.ascent(), first)
+        self.draw_text_line(painter, x, y, option.rect.width(), first, bold_font)
+        #painter.drawText(x, y + fm_bold.ascent(), first)
         y += fm_bold.height()
 
         # Draw remaining lines in maximum-size cell rectangle
         actual_row_h = self.parent_table.rowHeight(index.row())
         cell_limit = option.rect.top() + actual_row_h
 
-        painter.setFont(normal_font)
+        painter.setFont(norm_font)
         for line in remainder:
             if y + fm_norm.ascent() > cell_limit:
                 break  # Stop drawing at bottom of the cell rectangle
 
-            painter.drawText(x, y + fm_norm.ascent(), line)
+            self.draw_text_line(painter, x, y, option.rect.width(), line, norm_font)
+            #painter.drawText(x, y + fm_norm.ascent(), line)
             y += fm_norm.height()
 
         painter.restore()
+
+
+    def draw_text_line(self, painter, x, y, width, text, font):
+        """
+        Draws a single line of text at (x, y) coordinates.
+        Elides if the text exceeds the provided width.
+        """
+        fm = QFontMetrics(font)
+        # The '10' provides a 5px buffer on each side of the text
+        available_width = width - 10
+
+        # Standardize the eliding here so no line ever spills
+        display_text = fm.elidedText(text, Qt.TextElideMode.ElideRight, available_width)
+
+        painter.setFont(font)
+        # Note: We use the baseline (y + ascent) for precise vertical control
+        painter.drawText(x + 5, y + fm.ascent(), display_text)
