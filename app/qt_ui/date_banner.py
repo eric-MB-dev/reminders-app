@@ -25,9 +25,11 @@ class DateBannerWindow(QMainWindow):
         self.update_date_label()
 
         # Set Font: 12pt Bold
-        font = QFont("Arial", config.cell_font_size)
+        font = QFont("Arial", config.cell_font_pt_size)
         font.setBold(True)
         self.date_label.setFont(font)
+
+        config.font_changed.connect(self.on_font_changed)  # Listen for font-changed events
 
         # Center it
         self.date_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -61,6 +63,12 @@ class DateBannerWindow(QMainWindow):
 
         # Add label to banner
         self.banner.addWidget(self.date_label)
+
+    def on_font_changed(self):
+        new_font = self.font()
+        new_font.setPointSize(config.cell_font_pt_size)
+        self.setFont(new_font)
+        self.update()
 
     def update_date_label(self):
         today = dt.date.today()

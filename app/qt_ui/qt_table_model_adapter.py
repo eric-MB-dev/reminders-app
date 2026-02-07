@@ -45,7 +45,11 @@ class QtTableModelAdapter(QAbstractTableModel):
         # Load rows from the domain model to derive UI state
         self.load_rows()
         self.reminders_model._fully_initialized = True
-    
+
+    def on_font_changed(self):
+        # Trigger a call to headerData() for FontRole/DisplayRole
+        self.headerDataChanged.emit(Qt.Orientation.Horizontal, 0, len(C.ALL_COLS) - 1)
+
     def is_critical(self, row):
         return self._is_critical[row]
 
@@ -150,7 +154,7 @@ class QtTableModelAdapter(QAbstractTableModel):
 
         if role == Qt.ItemDataRole.FontRole:
             font = QFont()
-            font.setPixelSize(config.hdr_font_px)
+            font.setPointSize(config.hdr_font_pt_size)
             font.setBold(True)
             return font
 

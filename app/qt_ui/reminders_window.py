@@ -34,7 +34,7 @@ MAX_WINDOW_HEIGHT = 800
 class RemindersWindow(DateBannerWindow):
     def __init__(self, table_model):
         #print(">>> Reminders init() Started")
-        
+
         super().__init__()
         self.setWindowTitle(C.APP_NAME)
         # Delay layout logic until the window is fully initialized
@@ -42,7 +42,7 @@ class RemindersWindow(DateBannerWindow):
         self.setVisible(False)
         self._suppress_qt_events = True      # Ignore, paint, resize, and show until we're ready
         self._initial_layout_done = False      # Prevent resize events until it's done
-        
+
         # Reminders Table
         #self.table_view = QtRowAwareTableView()      # The Qt view model
         self.table_view = AutoResizingTableView()
@@ -65,7 +65,7 @@ class RemindersWindow(DateBannerWindow):
         vh = self.table_view.verticalHeader()
         vh.setDefaultSectionSize(16)
         vh.setSectionResizeMode(QHeaderView.ResizeToContents)
-        
+
         # Central widget & layout
         main_container = QWidget()
         container_layout = QVBoxLayout(main_container)
@@ -79,7 +79,7 @@ class RemindersWindow(DateBannerWindow):
             QSizePolicy.Policy.Preferred
         )
         container_layout.addWidget(self.table_view)
-     
+
         # Column alignments
         for col, alignment in enumerate(C.ALL_COL_ALIGNMENTS):
             if alignment == "Ctr":
@@ -88,13 +88,14 @@ class RemindersWindow(DateBannerWindow):
 
         # Data-row font
         cell_font = self.table_view.font()
-        cell_font.setPointSize(config.cell_font_size)
+        cell_font.setPointSize(config.cell_font_pt_size)
         self.table_view.setFont(cell_font)
-        
+        config.font_changed.connect(self.on_font_changed)  # Listen for font-changed events
+
         # Enable headers
         self.table_view.horizontalHeader().setVisible(True)
         hdr_font = self.table_view.horizontalHeader().font()
-        hdr_font.setPointSize(config.hdr_font_size)
+        hdr_font.setPointSize(config.hdr_font_pt_size)
         hdr_font.setBold(True)
         self.table_view.horizontalHeader().setFont(hdr_font)
 
@@ -108,7 +109,7 @@ class RemindersWindow(DateBannerWindow):
         self.table_view.setItemDelegateForColumn(
             C.COUNTDOWN_COL, left_justified_delegate
         )
-    
+
         # Bottom BUTTON-BAR BUTTONS
         btn_row = QHBoxLayout()
         container_layout.addLayout(btn_row)
@@ -123,15 +124,15 @@ class RemindersWindow(DateBannerWindow):
         btn_row.addStretch(1)
         # btn_row.addWidget(date_label)
         btn_row.addWidget(exit_btn)
-        
+
         # --- Final window setup ---
         self.setCentralWidget(main_container)
         # container_layout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
-        
+
         # Resize window to fit table width
         #int = self.table_view.sizeHint()
         #self.resize(hint.width(), hint.height() + 50)
-        
+
         # Basic table behavior
         self.table_view.setAlternatingRowColors(True)
         self.table_view.setSelectionBehavior(QAbstractItemView.SelectRows) # type: ignore[attr-defined]
@@ -145,14 +146,14 @@ class RemindersWindow(DateBannerWindow):
             C.COLUMN_INDICES["FLAG"],
             FlagDelegate(self.table_view)
         )
-        
+
         # Wiring for Item Action Button
         from delegates.delete_button_delegate import DeleteButtonDelegate
         delegate = DeleteButtonDelegate()
         delegate.clicked.connect(self.on_delete_clicked)
         self.table_view.setItemDelegateForColumn(C.DEL_COL, delegate)
         #DEGUG: print("C3: after DeleteButtonDelegate:", self.table)
-        
+
         # Restore saved window location and user configuration settings.
         config.load_config()
         (w, h, x, y) = config.window_geom
@@ -162,12 +163,17 @@ class RemindersWindow(DateBannerWindow):
         g = self.geometry()
         x, y = self.clamp_to_screen(g.x(), g.y(), g.width(), g.height())
         '''
-        
+
         # Use QTimer to defer layout until the window is done & the event-loop is running
         QTimer.singleShot(0, self._finish_init)
-    
+
     # end Init
-    
+
+    def on_font_changed(self):
+        # Tell the table to ask its delegates for new sizeHints.
+        self.table_view.resizeRowsToContents()
+        self.table_view.viewport().update()
+
     # Window exists. Make visible to trigger the paint event we need
     def _finish_init(self):
         #print(">>> _finish_init() Started")
@@ -231,7 +237,7 @@ class RemindersWindow(DateBannerWindow):
     def on_delete_clicked(self, row):
         self.vm.delete_row(row)
         self.table_model.layoutChanged.emit()
-    
+
     # ------------------------
     # Window behaviors
     # ------------------------
@@ -239,78 +245,78 @@ class RemindersWindow(DateBannerWindow):
         pos = self.pos()
         x = pos.x()
         y = pos.y()
-        
+
         size = self.size()
         w = size.width()
         h = size.height()
-        
+
         config.window_geom = (w, h, x, y)
         config.save_config()
-        
+
         QApplication.quit()
         event.accept()
-        
+
     def clamp_to_screen(self, x, y, w, h):
         """Make sure the window is visible on a small monitor"""
         screen = QApplication.primaryScreen().availableGeometry()
-        
+
         max_x = screen.right() - w
         max_y = screen.bottom() - h
-        
+
         x = max(screen.left(), min(x, max_x))   # Clamp x to range [constraint, max_x]
         y = max(screen.top(), min(y, max_y))
-        
+
         return x, y
-    
+
     def on_row_font_changed(self, row):
         self._apply_column_sizing()
         self.adjust_window_width_to_columns()
-    
+
     def _apply_column_sizing(self):
         # Let Qt compute a baseline (helps with icon columns, etc.)
         self.table_view.resizeColumnsToContents()
         QApplication.processEvents()
-        
+
         model = self.table_model
         view = self.table_view
         row_count = model.rowCount()
         col_count = model.columnCount()
-        
+
         # --- 1. Compute description column separately (your existing logic)
         self.compute_descr_col_width()
-        
+
         # --- 2. Compute all other columns using actual row fonts
         for col in range(col_count):
             if col == C.DESCR_COL:
                 continue
-            
+
             min_w = C.ALL_COL_MIN_WIDTHS[col]
             max_w = C.ALL_COL_MAX_WIDTHS[col]
-            
+
             natural_max = 0
-            
+
             for row in range(row_count):
                 index = model.index(row, col)
                 text = index.data(Qt.DisplayRole) or ""
-                
+
                 # Get the actual font for this cell
                 font = view.font()
                 if model.is_critical(row):
                     font.setBold(True)
-                
+
                 fm = QFontMetrics(font)
                 w = fm.horizontalAdvance(text)
-                
+
                 if w > natural_max:
                     natural_max = w
-            
+
             # Apply padding (optional but recommended)
             padded = natural_max + 12
-            
+
             # Clamp
             final = max(min_w, min(padded, max_w))
             view.setColumnWidth(col, final)
-    
+
     def compute_descr_col_width(self):
         """
         Compute width of multi-line, where first line may be bold
@@ -318,37 +324,37 @@ class RemindersWindow(DateBannerWindow):
         model = self.table_model
         view = self.table_view
         row_count = model.rowCount()
-        
+
         min_w = C.ALL_COL_MIN_WIDTHS[C.DESCR_COL]
         max_w = C.ALL_COL_MAX_WIDTHS[C.DESCR_COL]
-        
+
         natural_max = 0
         for row in range(row_count):
             index = model.index(row, C.DESCR_COL)
             text = index.data(Qt.DisplayRole) or ""
-            
+
             # Split into lines
             lines = text.split("\n")
-            
+
             # Determine fonts for this row
             base_font = view.font()
             bold_font = QFont(base_font)
             bold_font.setBold(True)
-            
+
             # First line may be bold
             for i, line in enumerate(lines):
                 if i == 0 and model.is_critical(row):
                     fm = QFontMetrics(bold_font)
                 else:
                     fm = QFontMetrics(base_font)
-                
+
                 w = fm.horizontalAdvance(line)
                 if w > natural_max:
                     natural_max = w
-        
+
         # Add padding
         padded = natural_max + 20
-        
+
         # Clamp
         final = max(min_w, min(padded, max_w))
         view.setColumnWidth(C.DESCR_COL, final)

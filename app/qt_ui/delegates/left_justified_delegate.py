@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QStyledItemDelegate
 
 # noinspection PyPep8Naming
 import table_constants as C
+from app.config import config
 #import sys, traceback
 
 from typing import cast, TYPE_CHECKING
@@ -38,18 +39,24 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
             width = option.widget.columnWidth(index.column())
         
         doc = QTextDocument()
-        doc.setDefaultFont(option.font)
+
+        # Update the font with the configured point size
+        f=QFont(option.font)
+        f.setPointSize(config.cell_font_pt_size)
+        doc.setDefaultFont(f)
+
         doc.setPlainText(text)
         doc.setTextWidth(width)
+
         height = int(doc.size().height()) - 6
         return QSize(width, height)
     
     # Bold the first line only for a critical-item reminder
     def paint(self, painter, option, index):
-        # --- INSTRUMENTATION ---
         actual_row_h = self.parent_table.rowHeight(index.row())
         rect_h = option.rect.height()
 
+        # --- INSTRUMENTATION ---
         # Only log if there's a mismatch or if the row is 'tall'
         #if rect_h != actual_row_h or rect_h > 100:
         #    print(f"[DEBUG] Paint Row {index.row()}:")

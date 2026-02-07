@@ -1,5 +1,5 @@
 
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QSettings, QObject, Signal
 
 # noinspection PyPep8Naming
 import table_constants as C
@@ -8,8 +8,19 @@ import utilities as fcn
 CONFIG_FILE = "config.ini"
 DEFAULT_CSV_FILE = 'reminders.csv'   # Default filename
 
-class AppConfig:
+class AppConfig(QObject):
+    """
+    Singleton configuration class.
+    USAGE:
+    from app.config import config
+    """
+    # Class-level signal definition
+    font_changed = Signal()
+
     def __init__(self):
+        # Required for QObject signals to work
+        super().__init__()
+
         self.config_path = fcn.get_app_path(CONFIG_FILE)
 
         self.curr_csv_file = DEFAULT_CSV_FILE
@@ -20,8 +31,8 @@ class AppConfig:
         self.date_display_format = "%d %b %Y"  # My 01 Han 202t format (used in testing). "%m/%d/%y" is 01/01/2026
         self.time_display_format = "%I:%M %p"   # for 12‑hr time. "%H:%M" for 24‑hr time.
 
-        self._hdr_font_size = 9  # The default. Adjusted to match the cell font
-        self._cell_font_size = C.DEFAULT_CELL_FONT_SIZE
+        self._cell_font_pt_size = C.DEFAULT_CELL_FONT_SIZE
+        self._hdr_font_pt_size = C.DEFAULT_CELL_FONT_SIZE - 1
 
         '''
         from dataclasses import dataclass
@@ -35,17 +46,19 @@ class AppConfig:
         self._geom_str = C.DEFAULT_GEOM_STR
 
     @property
-    def cell_font_size(self):
-        return self._cell_font_size
+    def cell_font_pt_size(self):
+        return self._cell_font_pt_size
 
-    @cell_font_size.setter
-    def cell_font_size(self, value):
-        self._cell_font_size = value
-        self._hdr_font_size = self._cell_font_size - 1
+    @cell_font_pt_size.setter
+    def cell_font_pt_size(self, value):
+        if self._cell_font_pt_size != value:
+            self._cell_font_pt_size = value
+            self._hdr_font_pt_size = self._cell_font_pt_size - 1
+            self.font_changed.emit()
 
     @property
-    def hdr_font_size(self):
-        return self._hdr_font_size
+    def hdr_font_pt_size(self):
+        return self._hdr_font_pt_size
 
     @property
     def window_geom(self):
