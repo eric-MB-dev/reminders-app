@@ -83,7 +83,7 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
             painter.restore()
             return
 
-        if index.column() != C.DESCR_COL:
+        if index.column() != C.DESCR_IDX:
             # Not the description column, so no first-line bolding logic
             super().paint(painter, option, index)
             return

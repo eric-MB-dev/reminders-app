@@ -80,11 +80,12 @@ class RemindersWindow(DateBannerWindow):
         )
         container_layout.addWidget(self.table_view)
 
-        # Column alignments
-        for col, alignment in enumerate(C.ALL_COL_ALIGNMENTS):
-            if alignment == "Ctr":
+        # Horizontal column alignments
+        for col_idx, col_def in enumerate(C.ALL_COLS):
+            # Check the column's horizontal alignment bit
+            if C.ALIGN_MAP[col_def.align] == Qt.AlignmentFlag.AlignCenter:
                 # Set centered data cells
-                self.table_view.setItemDelegateForColumn(col, CenteredDelegate())
+                self.table_view.setItemDelegateForColumn(col_idx, CenteredDelegate())
 
         # Data-row font
         cell_font = self.table_view.font()
@@ -104,10 +105,10 @@ class RemindersWindow(DateBannerWindow):
         from delegates.left_justified_delegate import LeftJustifiedDelegate
         left_justified_delegate = LeftJustifiedDelegate(self.table_view)
         self.table_view.setItemDelegateForColumn(
-            C.DESCR_COL, left_justified_delegate
+            C.DESCR_IDX, left_justified_delegate
         )
         self.table_view.setItemDelegateForColumn(
-            C.COUNTDOWN_COL, left_justified_delegate
+            C.COUNTDOWN_IDX, left_justified_delegate
         )
 
         # Bottom BUTTON-BAR BUTTONS
@@ -143,15 +144,14 @@ class RemindersWindow(DateBannerWindow):
         # Wiring to toggle the is_critical flag
         from delegates.flag_delegate import FlagDelegate
         self.table_view.setItemDelegateForColumn(
-            C.COLUMN_INDICES["FLAG"],
-            FlagDelegate(self.table_view)
+            C.FLAG_IDX, FlagDelegate(self.table_view)
         )
 
         # Wiring for Item Action Button
         from delegates.delete_button_delegate import DeleteButtonDelegate
         delegate = DeleteButtonDelegate()
         delegate.clicked.connect(self.on_delete_clicked)
-        self.table_view.setItemDelegateForColumn(C.DEL_COL, delegate)
+        self.table_view.setItemDelegateForColumn(C.DEL_IDX, delegate)
         #DEGUG: print("C3: after DeleteButtonDelegate:", self.table)
 
         # Restore saved window location and user configuration settings.
@@ -287,11 +287,12 @@ class RemindersWindow(DateBannerWindow):
 
         # --- 2. Compute all other columns using actual row fonts
         for col in range(col_count):
-            if col == C.DESCR_COL:
+            if col == C.DESCR_IDX:
                 continue
 
-            min_w = C.ALL_COL_MIN_WIDTHS[col]
-            max_w = C.ALL_COL_MAX_WIDTHS[col]
+            col_def = C.ALL_COLS[col]
+            min_w = col_def.min_w
+            max_w = col_def.max_w
 
             natural_max = 0
 
@@ -325,12 +326,13 @@ class RemindersWindow(DateBannerWindow):
         view = self.table_view
         row_count = model.rowCount()
 
-        min_w = C.ALL_COL_MIN_WIDTHS[C.DESCR_COL]
-        max_w = C.ALL_COL_MAX_WIDTHS[C.DESCR_COL]
+        col_def = C.ALL_COLS[C.DESCR_IDX]
+        min_w = col_def.min_w
+        max_w = col_def.max_w
 
         natural_max = 0
         for row in range(row_count):
-            index = model.index(row, C.DESCR_COL)
+            index = model.index(row, C.DESCR_IDX)
             text = index.data(Qt.DisplayRole) or ""
 
             # Split into lines
@@ -357,6 +359,6 @@ class RemindersWindow(DateBannerWindow):
 
         # Clamp
         final = max(min_w, min(padded, max_w))
-        view.setColumnWidth(C.DESCR_COL, final)
+        view.setColumnWidth(C.DESCR_IDX, final)
 
 #endClass RemindersWindow

@@ -62,19 +62,21 @@ class QtTableModelAdapter(QAbstractTableModel):
     
     #@_qt_guard
     def columnCount(self, parent=QModelIndex()):
-        return len(C.ALL_COL_LABELS)
+        return len(C.ALL_COLS)
     
     def load_rows(self):
         self._data_rows = self.reminders_model.display_rows()
         self._is_critical = [
-            (row[C.FLAG_COL] == C.IS_CRITICAL_FLAG) for row in self._data_rows
+            (row[C.FLAG_IDX] == C.IS_CRITICAL_FLAG) for row in self._data_rows
         ]
         self._has_note = [
-            ("\n" in row[C.DESCR_COL]) for row in self._data_rows
+            ("\n" in row[C.DESCR_IDX]) for row in self._data_rows
         ]
 
     @_qt_guard
-    def v_alignment_for(self, row, col):
+    def v_alignment_for(self, row, _col):
+        # Overrwide method. Two args required. Only one used.
+        # Underscore in name tells Pycharm to shut up about it.
         return (
             Qt.AlignmentFlag.AlignTop
             if self.has_note(row)
@@ -82,53 +84,50 @@ class QtTableModelAdapter(QAbstractTableModel):
         )
 
     @_qt_guard
-    def h_alignment_for(self, row, col):
+    def h_alignment_for(self, _row, col):
+        # Overrwide method. Two args required. Only one used.
+        # Underscore in name tells Pycharm to shut up about it.
+        col_def = C.ALL_COLS[col]
+        return C.ALIGN_MAP[col_def.align]
+        '''
         return (
             Qt.AlignmentFlag.AlignHCenter
             if C.ALL_COL_ALIGNMENTS[col] == "Ctr"
             else Qt.AlignmentFlag.AlignLeft
         )
+        '''
 
     @_qt_guard
     def data(self, index, role):
         row = index.row()
         col = index.column()
-        
-        # --- Data columns ---
-        if col < C.NUM_DATA_COLS:
-            
-            # Bold entire row if critical
-            if role == Qt.FontRole and self._is_critical[row]:
-                f = QFont()
-                f.setBold(True)
-                return f
-            
-            # Display raw value from cached rows
-            if role == Qt.DisplayRole:
-                row_data = self._data_rows[row]
-                value = row_data[col]
-                #print(f"ROW DATA: row={index.row()}, col={index.column()}, value={value!r}")
-                return value
-            
-            if role == Qt.TextAlignmentRole:
-                vert_align = self.v_alignment_for(row, col)
-                horiz_align = self.h_alignment_for(row, col)
-                return vert_align | horiz_align
 
-            return None
-        
-        # --- Button columns ---
+        if col >= C.FIRST_BTN_IDX:
+            return None  # Delegate/View handles row action-buttons
+
+        # --- Data columns ---
+        if role == Qt.FontRole and self._is_critical[row]:
+            # Bold entire row if critical
+            f = QFont()
+            f.setBold(True)
+            return f
+
+        # Display raw value from cached rows
         if role == Qt.DisplayRole:
-            #print(f"BUTTON DATA: row={index.row()}, col={index.column()}, value=Empty String")
-            return ""  # placeholder for delegates
-        
-        if role == Qt.DecorationRole:
-            return self._icon_for_button_column(col)
-        
+            row_data = self._data_rows[row]
+            value = row_data[col]
+            #print(f"ROW DATA: row={index.row()}, col={index.column()}, value={value!r}")
+            return value
+
+        if role == Qt.TextAlignmentRole:
+            v_bit = self.v_alignment_for(row, col)
+            h_bit = self.h_alignment_for(row, col)
+            return v_bit | h_bit
+
         return None
-    
+
     @_qt_guard
-    def _icon_for_button_column(self, col):
+    def icon_for_button_column(self, col):
         if col == C.DEL_COL:
             return QIcon(":/icons/delete.png")
         if col == C.EDIT_COL:
@@ -145,11 +144,12 @@ class QtTableModelAdapter(QAbstractTableModel):
             return None
         
         # Qt sometimes asks for out-of-range sections; Prevent crash here
-        if section < 0 or section >= len(C.ALL_COL_LABELS):
+        if section < 0 or section >= len(C.ALL_COLS):
             return None
-        
+
+        col_def = C.ALL_COLS[section]
         if role == Qt.DisplayRole:  # type: ignore[attr-defined]
-            return C.ALL_COLS[section].label
+            return col_def.label
             #return C.ALL_COL_LABELS[section]
 
         if role == Qt.ItemDataRole.FontRole:
@@ -158,12 +158,9 @@ class QtTableModelAdapter(QAbstractTableModel):
             font.setBold(True)
             return font
 
-        if role == Qt.TextAlignmentRole:  # type: ignore[attr-defined]
-            if C.ALL_COL_ALIGNMENTS[section] == "Ctr":
-                return Qt.AlignmentFlag.AlignCenter
-            else:
-                return Qt.AlignmentFlag.AlignLeft
-            
+        if role == Qt.TextAlignmentRole:
+            return C.ALIGN_MAP[col_def.align] | Qt.AlignmentFlag.AlignVCenter
+
         return super().headerData(section, orientation, role)
 
     def toggle_flag(self, row):
