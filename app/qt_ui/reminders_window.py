@@ -13,12 +13,15 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QAbstractItemView,
                                QApplication, QSizePolicy, QPushButton, QLabel,
                                QStyledItemDelegate, QHeaderView, QTableWidgetItem,
                                )
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QSize
 from PySide6.QtGui import QFont, QFontMetrics
+
+import qtawesome as qta
 
 from date_banner import DateBannerWindow
 from auto_resizing_table_view import AutoResizingTableView
 from delegates.centered_delegate import CenteredDelegate
+from reminder_button import ReminderButton, TrashButton    #TODO: Add other buttons
 
 # noinspection PyPep8Naming
 import app.table_constants as C
@@ -146,13 +149,28 @@ class RemindersWindow(DateBannerWindow):
         self.table_view.setItemDelegateForColumn(
             C.FLAG_IDX, FlagDelegate(self.table_view)
         )
+        '''
+        # Wire up the Action Buttons
+        for col_idx, col_def in enumerate(C._COLUMN_SCHEMA):
+            if col_def.icon:
+                # Create BaseButton to handle clicks
+                btn = ReminderButton(col_def.icon)
+                btn.action_type = col_def.id  # Tag it so the handler knows what to do
 
-        # Wiring for Item Action Button
-        from delegates.delete_button_delegate import DeleteButtonDelegate
+                # Connect to the "smart" row finder
+                btn.clicked.connect(self.handle_button_click)
+
+                # Put it in the table
+                self.table.setIndexWidget(self.table.model().index(row_idx, col_idx), btn)
+        '''
+
+        '''
+        from delegates.zOLD_delete_button_delegate import DeleteButtonDelegate
         delegate = DeleteButtonDelegate()
         delegate.clicked.connect(self.on_delete_clicked)
         self.table_view.setItemDelegateForColumn(C.DEL_IDX, delegate)
         #DEGUG: print("C3: after DeleteButtonDelegate:", self.table)
+        '''
 
         # Restore saved window location and user configuration settings.
         config.load_config()
@@ -187,6 +205,9 @@ class RemindersWindow(DateBannerWindow):
         self.table_view.resizeRowsToContents()
         self._apply_row_height_limits()   # Cap row heights
 
+        # RE-CREATE BUTTONS (required after any sort or model change)
+        self._update_action_buttons()
+
         # Tell window to tell the window that sizeHint has changed
         self.table_view.updateGeometry()  # Refresh the sizeHint
 
@@ -210,7 +231,6 @@ class RemindersWindow(DateBannerWindow):
         self._initial_layout_done = True
         self._suppress_qt_events = False
 
-
     def _apply_row_height_limits(self):
         # Calculate the max height for 3 lines
         metrics = self.table_view.fontMetrics()
@@ -221,8 +241,8 @@ class RemindersWindow(DateBannerWindow):
 
         # TEMPORARILY allow manual resizing
         # If the mode is 'ResizeToContents', manual resizeSection() calls are ignored.
-        old_mode = v_header.sectionsClickable()  # A placeholder to show we're changing state
-        v_header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        #old_mode = v_header.sectionsClickable()  # A placeholder to show we're changing state
+        #v_header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
 
         # Iterate and cap
         for row in range(self.table_model.rowCount()):
@@ -268,9 +288,9 @@ class RemindersWindow(DateBannerWindow):
 
         return x, y
 
-    def on_row_font_changed(self, row):
+    def on_row_font_changed(self, _row):
         self._apply_column_sizing()
-        self.adjust_window_width_to_columns()
+        ###self.adjust_window_width_to_columns()
 
     def _apply_column_sizing(self):
         # Let Qt compute a baseline (helps with icon columns, etc.)
@@ -360,5 +380,80 @@ class RemindersWindow(DateBannerWindow):
         # Clamp
         final = max(min_w, min(padded, max_w))
         view.setColumnWidth(C.DESCR_IDX, final)
+
+    def _update_action_buttons(self):
+        """
+        MUST BE CALLED after and SORT or MODEL CHANGE
+        """
+        model = self.table_view.model()
+        for row in range(model.rowCount()):
+            for col, col_def in enumerate(C._COLUMN_SCHEMA):
+                if col_def.icon:
+                    # Check if this ID is a 'Button' type in our map
+                    btn_cfg = C.ICON_MAP.get(col_def.id)
+                    if not btn_cfg:
+                        continue
+
+                    # Default values from the map
+                    icon_str = btn_cfg["icon"]
+                    icon_color = btn_cfg["color"]
+
+                    if col_def.id == "ALERT":
+                        #TODO: Enable this
+                        pass
+                        # Assuming your model returns a boolean for 'is_muted'
+                        is_muted = model.data(model.index(row, col), Qt.ItemDataRole.UserRole)
+                        if is_muted:
+                            icon_str = btn_cfg.get("off_icon", icon_str)
+                            icon_color = "gray"
+
+                    # Build the button
+                    btn = QPushButton()
+                    btn.setIcon(qta.icon(icon_str, color=icon_color))
+                    btn.setIconSize(QSize(22, 22))
+                    btn.setFlat(True)
+                    # Transparent background, no extra padding
+                    btn.setStyleSheet("""
+                        QPushButton {
+                            background-color: transparent; 
+                            border: none;
+                            padding: 0px;
+                            margin: 0px;
+                        }
+                    """)
+
+                    # Tag it with the action ID
+                    btn.setProperty("action_id", col_def.id)
+
+                    # Connect to the smart row-finder
+                    btn.clicked.connect(self.on_button_click)
+
+                    # 2. Create a Container to center the icon
+                    container = QWidget()
+                    layout = QHBoxLayout(container)
+                    layout.setContentsMargins(0, 0, 0, 0)
+                    layout.setSpacing(0)
+
+                    # Apply Alignment from the Schema
+                    if col_def.align == "Ctr":
+                        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    elif col_def.align == "Left":
+                        layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+
+                    layout.addWidget(btn)
+
+                    # Set it in the view
+                    self.table_view.setIndexWidget(model.index(row, col), container)
+
+    def on_button_click(self):
+        button = self.sender()
+        action_id = button.property("action_id")
+
+        # Map the button's local (0,0) coordinate to the TableView's coordinate system
+        global_pos = button.mapTo(self.table_view.viewport(), button.rect().center())
+        index = self.table_view.indexAt(global_pos)
+
+        if index.isValid():
+            row = index.row()
 
 #endClass RemindersWindow

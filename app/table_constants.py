@@ -4,8 +4,14 @@
 # noinspection PyPep8Naming
 # import app.table_constants as C
 # ===========================================================
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
+from PySide6.QtWidgets import QApplication, QStyle
 
-APP_NAME = "Reminders"
+from dataclasses import dataclass
+from typing import List, Optional
+
+APP_NAME = "Reminder System"
 
 DEFAULT_CELL_FONT_SIZE = 11  # Header font set to one less in config
 
@@ -14,15 +20,24 @@ INITIAL_DISPLAY_DATA = ["!", "No entries yet. Add some!", "", "", "", ""]
 
 CSV_COL_HEADERS =  ["Title", "Date", "Time", "Flag", "Notes", "Repeat"]
 INITIAL_CSV_DATA = ["No entries yet. Add some!", "", "", "!", "", ""]
+"""
+def get_btn_icon(col_idx):
+    C.DEL_COL: QIcon(":/icons/delete.png")
+    C.EDIT_COL: QIcon(":/icons/edit.png")
+    C.ALERT_COL: QIcon(":/icons/alert.png")
+    C.NEXT_COL: QIcon(":/icons/next.png")
+    
+    # Fetch the icon using the global app style
+    style = QApplication.style()
+    if style:
+        # We verified this specific Enum path works for your setup
+        return app_style.standardIcon(QStyle.StandardPixmap.SP_TrashIcon)
+    return QIcon()
+"""
 
 ############################
 ###  COLUMN DEFINITIONS  ###
 ############################
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon
-
-from dataclasses import dataclass
-from typing import List, Optional
 
 @dataclass
 class ColDef:
@@ -31,10 +46,8 @@ class ColDef:
     align: str        # "Left", "Ctr", etc.
     min_w: int
     max_w: int
+    icon: str = None      # Icon ID for buttons
     visible: bool = True  # Default to visible
-
-# Domain constants
-IS_CRITICAL_FLAG = "!"
 
 # --- Schema Definitions (all display columns) ---
 # USABE:  col_def = C.ALL_COLS[col#]
@@ -51,11 +64,26 @@ _COLUMN_SCHEMA = [
     ColDef("COUNTDOWN", "Countdown", "Left", 120, 120),
 
     # Action-button Columns
-    ColDef("EDIT",  "Edit",      "Ctr",   35,  35),
-    ColDef("ALERT", "Alerts",    "Ctr",   42,  42),
-    ColDef("NEXT",  "Next",      "Ctr",   35,  35),
-    ColDef("DEL",   "Del",       "Ctr",   35,  35),
+    ColDef("EDIT",  "Edit",      "Ctr",   35,  35, icon="fa5s.pencil-alt"),
+    ColDef("ALERT", "Alerts",    "Ctr",   42,  42, icon="mdi.bell-off"),
+    ColDef("NEXT",  "Next",      "Ctr",   40,  40, icon="ei.repeat"),
+    ColDef("DEL",   "Del",       "Ctr",   35,  35, icon="fa5s.trash"),
 ]
+"""
+Candidate buttons
+    [ ] fa5s.trash
+        qta.icon('fa5s.trash', scale_factor=1.2) to fill more button space without making button larger
+    [ ] Other icons:
+        fa5s.pencil-alt (std), fa5s.pencil, msc.pencil, n.pencil-fill
+        fa5s.bell, fa6s.bell / mdi.bell-off, mdi.bell-off-outline, mdi.mdi6.bell-off, mdi6.bell-off-outline
+        ei.repeat, ei.repeat-alt
+"""
+ICON_MAP = {
+    "EDIT":  {"icon": "fa5s.pencil-alt", "color": "forestgreen"},           # "#FFD700"}, # Gold
+    "ALERT": {"icon": "fa5s.bell",       "off_icon": "mdi.bell-off", "color": "#FFBF00"}, # Amber
+    "NEXT":  {"icon": "ei.repeat",       "color": "dodgerblue"},
+    "DEL":   {"icon": "fa5s.trash",      "color": "#8b0000"}, # Deep Red
+}
 
 # Map alignment-designation to UI marker
 ALIGN_MAP = {
@@ -63,6 +91,9 @@ ALIGN_MAP = {
     "Left": Qt.AlignmentFlag.AlignLeft,
     "Right": Qt.AlignmentFlag.AlignRight
 }
+
+# Domain constants
+IS_CRITICAL_FLAG = "!"
 
 # --- The Active Set (The "Source of Truth" for the View) ---
 # This list only contains columns where visible=True
@@ -94,7 +125,7 @@ def get_align(idx: int):
 # rather than re-loaded 60 times a second when paint() methods run.
 _ICON_CACHE = {}
 
-def get_icon(col_id: str) -> QIcon:
+def get_btn_icon(col_id: str) -> QIcon:
     if col_id not in _ICON_CACHE:
         # Map the Schema ID to the resource path
         path_map = {

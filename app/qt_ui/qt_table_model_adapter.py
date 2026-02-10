@@ -125,18 +125,6 @@ class QtTableModelAdapter(QAbstractTableModel):
             return v_bit | h_bit
 
         return None
-
-    @_qt_guard
-    def icon_for_button_column(self, col):
-        if col == C.DEL_COL:
-            return QIcon(":/icons/delete.png")
-        if col == C.EDIT_COL:
-            return QIcon(":/icons/edit.png")
-        if col == C.ALERT_COL:
-            return QIcon(":/icons/alert.png")
-        if col == C.NEXT_COL:
-            return QIcon(":/icons/next.png")
-        return None
     
     def headerData(self, section, orientation, role=Qt.DisplayRole):  # type: ignore[attr-defined]
         # Only care about horizontal headers
