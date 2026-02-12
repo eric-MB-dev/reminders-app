@@ -38,7 +38,8 @@ def main():
     app = QApplication(sys.argv)
     rtm = QtTableModelAdapter(domain_model)
     window = RemindersWindow(rtm)
-    window.show()
+    ### NO LONGER NEEED. THe window shows itself when it's ready.
+    ### window.show()
     sys.exit(app.exec())
 
 if __name__ == "__main__":

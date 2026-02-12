@@ -36,11 +36,11 @@ def formatted_date_time(dt):
 
 def reminders_to_display_rows(reminder):
     """Return a list of strings for each column in the grid."""
-    date_str, time_str = formatted_date_time(reminder.when)
+    date_str, time_str = formatted_date_time(reminder._when)
     
     return [
         combine_text_and_notes(reminder.text, reminder.notes),
-        format_day_of_week(reminder.when),
+        format_day_of_week(reminder._when),
         date_str,
         time_str,
     ]

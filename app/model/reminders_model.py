@@ -19,9 +19,14 @@ class RemindersModel:
         if reminder_list is not None:
             self._reminder_items = reminder_list
         elif data_manager is not None:
+            self.data_manager = data_manager
             self._reminder_items = data_manager.load()
         else:
             raise ValueError("Need reminder_list or data_manager")
+
+    def __len__(self):
+        """Standard Python way to support len(model)"""
+        return len(self._reminder_items) if self._reminder_items else 0
 
     def items(self):
         return self._reminder_items
@@ -48,8 +53,28 @@ class RemindersModel:
     def remove(self, reminder):
         self.reminders.remove(reminder)
 
-    def find_by_id(self, reminder_id):
-        """Optional: lookup helper if we add IDs later."""
-        pass
+    def get_reminder(self, index: int) -> ReminderItem:
+        """Returns the ReminderItem at the specified index."""
+        try:
+            return self._reminder_items[index]  # Or whatever your internal list is named
+        except IndexError:
+            return None  # Or handle as a Graceful Failure
+
+    # Inside your RemindersModel class
+    def toggle_item_flag(self, row_idx):
+        reminder = self.get_reminder(row_idx)
+        if reminder:
+            # Perform the logic
+            reminder.flag = C.IS_CRITICAL_FLAG if not reminder.flag else ""
+
+            # Notify the View to repaint
+            self.dataChanged.emit(self.index(row_idx, 0), self.index(row_idx, 0))
+
+            # Persist the change immediately
+            self.save_to_disk()
+
+    def save_to_disk(self):
+        # Now that you stored the manager, this works!
+        self.data_manager.save(self._reminders)
 
 #end CLASS ReminderDataModel

@@ -21,7 +21,6 @@ import qtawesome as qta
 from date_banner import DateBannerWindow
 from auto_resizing_table_view import AutoResizingTableView
 from delegates.centered_delegate import CenteredDelegate
-from reminder_button import ReminderButton, TrashButton    #TODO: Add other buttons
 
 # noinspection PyPep8Naming
 import app.table_constants as C
@@ -35,22 +34,25 @@ MAX_WINDOW_WIDTH = 3000  # WAS = sum(C.VM_COLUMN_WIDTHS) + GRID_STRUCTURE_PADDIN
 MAX_WINDOW_HEIGHT = 800
 
 class RemindersWindow(DateBannerWindow):
-    def __init__(self, table_model):
+    def __init__(self, model_adapter):
         #print(">>> Reminders init() Started")
 
         super().__init__()
         self.setWindowTitle(C.APP_NAME)
+
         # Delay layout logic until the window is fully initialized
         # (Making it visible forces the initialization process to finish!)
-        self.setVisible(False)
+        #self.setVisible(False)
+
+        self.setUpdatesEnabled(False)  # "Freeze" the UI
         self._suppress_qt_events = True      # Ignore, paint, resize, and show until we're ready
         self._initial_layout_done = False      # Prevent resize events until it's done
 
         # Reminders Table
         #self.table_view = QtRowAwareTableView()      # The Qt view model
         self.table_view = AutoResizingTableView()
-        self.table_model = table_model      # My domain model = table_model.reminders_model
-        self.table_view.setModel(self.table_model)
+        self.model_adapter = model_adapter      # My domain model = table_model.reminders_model
+        self.table_view.setModel(self.model_adapter)
 
         # TUrn off cell selections &  highlighting on hover
         self.table_view.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
@@ -187,6 +189,16 @@ class RemindersWindow(DateBannerWindow):
 
     # end Init
 
+
+    def resizeEvent(self, event):
+        if getattr(self, "_suppress_qt_events", False):
+            # Ignore the the less-than-truly-helpful events generated
+            # during column sizing, even when suppress_events is True!!!
+            event.ignore()
+            return
+        super().resizeEvent(event)
+
+
     def on_font_changed(self):
         # Tell the table to ask its delegates for new sizeHints.
         self.table_view.resizeRowsToContents()
@@ -221,7 +233,9 @@ class RemindersWindow(DateBannerWindow):
             # Lock the layout to its new, smaller sizeHint
             self.layout().setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
 
+        self.setUpdatesEnabled(True) # "Thaw" the UI
         self.adjustSize()
+        self.show()
 
         # --- INSTRUMENTATION START ---
         #print(f"[DEBUG] Window Size AFTER:  {self.width()}x{self.height()}")
@@ -230,6 +244,8 @@ class RemindersWindow(DateBannerWindow):
         # Initial layout has finished. Enable RESIZE and keep it from happening again.
         self._initial_layout_done = True
         self._suppress_qt_events = False
+
+    #end refresh_layout
 
     def _apply_row_height_limits(self):
         # Calculate the max height for 3 lines
@@ -245,7 +261,7 @@ class RemindersWindow(DateBannerWindow):
         #v_header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
 
         # Iterate and cap
-        for row in range(self.table_model.rowCount()):
+        for row in range(self.model_adapter.rowCount()):
             current_h = self.table_view.rowHeight(row)
             if current_h > max_h:
                 v_header.resizeSection(row, max_h)
@@ -256,7 +272,7 @@ class RemindersWindow(DateBannerWindow):
     #--------------------------------
     def on_delete_clicked(self, row):
         self.vm.delete_row(row)
-        self.table_model.layoutChanged.emit()
+        self.model_adapter.layoutChanged.emit()
 
     # ------------------------
     # Window behaviors
@@ -295,12 +311,18 @@ class RemindersWindow(DateBannerWindow):
     def _apply_column_sizing(self):
         # Let Qt compute a baseline (helps with icon columns, etc.)
         self.table_view.resizeColumnsToContents()
-        QApplication.processEvents()
+        ### NO LONBER NEEEDED....QApplication.processEvents() ###
 
-        model = self.table_model
+        model = self.model_adapter
         view = self.table_view
         row_count = model.rowCount()
         col_count = model.columnCount()
+
+        # If row_count is 0 or None, we aren't ready to measure fonts yet!
+        if not row_count:
+            # Wait 50ms and try again
+            QTimer.singleShot(50, self._apply_column_sizing)
+            return
 
         # --- 1. Compute description column separately (your existing logic)
         self.compute_descr_col_width()
@@ -322,7 +344,8 @@ class RemindersWindow(DateBannerWindow):
 
                 # Get the actual font for this cell
                 font = view.font()
-                if model.is_critical(row):
+                reminder = model.get_reminder(row)
+                if getattr(reminder, "is_critical", False):
                     font.setBold(True)
 
                 fm = QFontMetrics(font)
@@ -342,7 +365,7 @@ class RemindersWindow(DateBannerWindow):
         """
         Compute width of multi-line, where first line may be bold
         """
-        model = self.table_model
+        model = self.model_adapter
         view = self.table_view
         row_count = model.rowCount()
 
@@ -352,8 +375,8 @@ class RemindersWindow(DateBannerWindow):
 
         natural_max = 0
         for row in range(row_count):
-            index = model.index(row, C.DESCR_IDX)
-            text = index.data(Qt.DisplayRole) or ""
+            col_idx = model.index(row, C.DESCR_IDX)
+            text = col_idx.data(Qt.DisplayRole) or ""
 
             # Split into lines
             lines = text.split("\n")
@@ -365,7 +388,8 @@ class RemindersWindow(DateBannerWindow):
 
             # First line may be bold
             for i, line in enumerate(lines):
-                if i == 0 and model.is_critical(row):
+                reminder = model.get_reminder(row)
+                if i == 0 and getattr(reminder,"is_critical", False):
                     fm = QFontMetrics(bold_font)
                 else:
                     fm = QFontMetrics(base_font)
@@ -387,7 +411,7 @@ class RemindersWindow(DateBannerWindow):
         """
         model = self.table_view.model()
         for row in range(model.rowCount()):
-            for col, col_def in enumerate(C._COLUMN_SCHEMA):
+            for col, col_def in enumerate(C.COLUMN_SCHEMA):
                 if col_def.icon:
                     # Check if this ID is a 'Button' type in our map
                     btn_cfg = C.ICON_MAP.get(col_def.id)
@@ -397,20 +421,29 @@ class RemindersWindow(DateBannerWindow):
                     # Default values from the map
                     icon_str = btn_cfg["icon"]
                     icon_color = btn_cfg["color"]
+                    icon_size = QSize(22,22)
 
                     if col_def.id == "ALERT":
+                        icon_size = QSize(24,24)
                         #TODO: Enable this
                         pass
                         # Assuming your model returns a boolean for 'is_muted'
                         is_muted = model.data(model.index(row, col), Qt.ItemDataRole.UserRole)
                         if is_muted:
                             icon_str = btn_cfg.get("off_icon", icon_str)
-                            icon_color = "gray"
+                            icon_color = "lightgray"
+                            # "gray"--dark gray, "lightgray"--std light gray,
+                            # #E0E0E0--very soft gray for disabled states
+
+                    if col_def.id == "NEXT":
+                        has_repeats = model.data(model.index(row, col), Qt.ItemDataRole.UserRole)
+                        if not has_repeats:
+                            icon_color = "lightgray"
 
                     # Build the button
                     btn = QPushButton()
                     btn.setIcon(qta.icon(icon_str, color=icon_color))
-                    btn.setIconSize(QSize(22, 22))
+                    btn.setIconSize(icon_size)
                     btn.setFlat(True)
                     # Transparent background, no extra padding
                     btn.setStyleSheet("""

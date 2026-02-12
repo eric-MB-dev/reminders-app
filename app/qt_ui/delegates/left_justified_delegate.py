@@ -8,6 +8,8 @@ from PySide6.QtWidgets import QStyledItemDelegate
 # noinspection PyPep8Naming
 import table_constants as C
 from app.config import config
+
+import os
 #import sys, traceback
 
 from typing import cast, TYPE_CHECKING
@@ -18,21 +20,25 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
     """
     Determine row height and expand rows as needed, and
     """
+    # Left horizontal alignment for these cells
+    h_alignment_bit = Qt.AlignmentFlag.AlignLeft
+
     def __init__(self, parent_table):
         super().__init__(parent_table)
         self.parent_table = parent_table # Now we can talk to the table!
 
-    def initStyleOption(self, option, index):
-        """This code runs on non-critical rows, because paint() doesn't change it"""
-        super().initStyleOption(option, index)
-        from qt_table_model_adapter import QtTableModelAdapter
-        model = cast("QtTableModelAdapter", index.model())
-        vert_align = model.v_alignment_for(index.row(), index.column())
-        option.displayAlignment = vert_align | Qt.AlignmentFlag.AlignLeft
-
     def sizeHint(self, option, index):
         text = index.data(Qt.DisplayRole) or ""
-        
+
+        # INSTRUMENTATION: Check for non-string data
+        if not isinstance(text, str) and text is not None:
+            # Determine which function/method is breaking (returning a method instead of a string)
+            print(f"\n[CRITICAL ERROR] Delegate received non-string data!")
+            print(f"Row: {index.row()}, Col: {index.column()}")
+            print(f"Data Type: {type(text)}")
+            print(f"Data Value: {text}")
+            os._exit(1)
+
         # Qt sometimes passes width=0 during geometry calculation
         width = option.rect.width()
         if width <= 1:
@@ -74,7 +80,8 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         fm_norm = QFontMetrics(norm_font)
 
         # If not flagged as critical, paint normally within the cell's max-height rectangle
-        is_critical = index.model().is_critical(index.row())
+        reminder = index.model().get_reminder(index.row())
+        is_critical = getattr(reminder, "is_critical", False)
         if not is_critical:
             painter.save()
             painter.setFont(norm_font)
@@ -104,19 +111,21 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         total_height = fm_bold.height() + len(remainder) * fm_norm.height()
 
         # Determine vertical alignment
-        from qt_table_model_adapter import QtTableModelAdapter
+        from qt_table_model_adapter import v_alignment
         model = cast("QtTableModelAdapter", index.model())
-        vert_align = model.v_alignment_for(index.row(), index.column())
+        reminder = model.get_reminder(index.row())
+        vert_align = v_alignment(reminder)
 
         # Qtable refuses to adjust it's minimum row size below 28px or so.
         # So we resort to code like this to center single-line rows in the
         # overly-tall rows. (Multi-line rows work beautifully.)
-        if vert_align & Qt.AlignmentFlag.AlignVCenter:
-            # Single-line row (no note, centered)
-            y = option.rect.top() + (option.rect.height() - fm_bold.height()) // 2
-        else:
+        #print(f"DEBUG: Row {index.row()} Vert Align Bits: {bin(int(vert_align or 0))}")
+        if vert_align & Qt.AlignmentFlag.AlignTop:
             # Multi-line row start at top left of cell
             y = option.rect.top()
+        else:
+            # Single-line row (no note, centered)
+            y = option.rect.top() + (option.rect.height() - fm_bold.height()) // 2
 
         # Starting x
         x = option.rect.left()

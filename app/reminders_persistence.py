@@ -59,10 +59,13 @@ class RemindersPersistence:
     # Store reminders in user's CSV file
     def save(self, reminders):
         #print(f"csv+path = {self.csv_path}")
+        fcn.atomic_save(reminders, self.csv_path)
+        '''
         with open(self.csv_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow(C.CSV_COL_HEADERS)
             for r in reminders:
                 writer.writerow(r.to_csv_row())
+        '''
 
-#end CLASS RemindersPersistence
+    #end CLASS RemindersPersistence

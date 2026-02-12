@@ -7,9 +7,10 @@
 # authority on the table’s shape and is the bridge between domain-model data & Qt.
 
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex
-from PySide6.QtGui import QFont, QIcon # QFontMetrics,
+from PySide6.QtGui import QFont #, QIcon, QFontMetrics
 
 from app.model.reminders_model import RemindersModel
+from app.model.reminder_item import ReminderItem
 from app.config import config
 
 # noinspection PyPep8Naming
@@ -23,11 +24,23 @@ def _qt_guard(fn):
         try:
             return fn(*args, **kwargs)
         except Exception:
-            print("\n=== Qt swallowed an exception ===")
+            print("\n" + "!" * 40)
+            print(f"CRASH IN: {fn.__name__}")
             traceback.print_exc()
-            print("=== End swallowed exception ===\n")
-            raise
+            print("!" * 40 + "\n")
+            # DO NOT RAISE. Return a safe value for Qt to digest.
+            return None
     return wrapper
+
+def v_alignment(reminder: ReminderItem):
+    #if getattr(reminder, "has_notes", False):
+    if reminder.has_notes:
+        return Qt.AlignmentFlag.AlignTop
+    return Qt.AlignmentFlag.AlignVCenter
+
+def h_alignment(col_idx):
+    col_def = C.ALL_COLS[col_idx]
+    return C.ALIGN_MAP[col_def.align]
 
 class QtTableModelAdapter(QAbstractTableModel):
     """
@@ -35,97 +48,92 @@ class QtTableModelAdapter(QAbstractTableModel):
     """
     def __init__(self, domain_model:RemindersModel):
         super().__init__()
-        self.reminders_model = domain_model
+        self._reminders_model = domain_model
+        self._reminders_model._fully_initialized = True
 
-        # Entry data
-        self._data_rows = []
-        self._is_critical = []
-        self._has_note = [ ]
-        
-        # Load rows from the domain model to derive UI state
-        self.load_rows()
-        self.reminders_model._fully_initialized = True
+        # Cache the font we'll need many times later
+        self._bold_font = QFont()
+        self._bold_font.setBold(True)
 
     def on_font_changed(self):
         # Trigger a call to headerData() for FontRole/DisplayRole
         self.headerDataChanged.emit(Qt.Orientation.Horizontal, 0, len(C.ALL_COLS) - 1)
 
-    def is_critical(self, row):
-        return self._is_critical[row]
-
-    def has_note(self, row):
-        return self._has_note[row]
-
     @_qt_guard
     def rowCount(self, parent=QModelIndex()):
-        return len(self.reminders_model.display_rows())
+        # Direct count of the row objects
+        if not self._reminders_model:
+            return 0  # Return an actual integer when the model isn't present, not None!
+        return len(self._reminders_model)
     
     #@_qt_guard
     def columnCount(self, parent=QModelIndex()):
         return len(C.ALL_COLS)
-    
-    def load_rows(self):
-        self._data_rows = self.reminders_model.display_rows()
-        self._is_critical = [
-            (row[C.FLAG_IDX] == C.IS_CRITICAL_FLAG) for row in self._data_rows
-        ]
-        self._has_note = [
-            ("\n" in row[C.DESCR_IDX]) for row in self._data_rows
-        ]
-
-    @_qt_guard
-    def v_alignment_for(self, row, _col):
-        # Overrwide method. Two args required. Only one used.
-        # Underscore in name tells Pycharm to shut up about it.
-        return (
-            Qt.AlignmentFlag.AlignTop
-            if self.has_note(row)
-            else Qt.AlignmentFlag.AlignVCenter
-        )
-
-    @_qt_guard
-    def h_alignment_for(self, _row, col):
-        # Overrwide method. Two args required. Only one used.
-        # Underscore in name tells Pycharm to shut up about it.
-        col_def = C.ALL_COLS[col]
-        return C.ALIGN_MAP[col_def.align]
-        '''
-        return (
-            Qt.AlignmentFlag.AlignHCenter
-            if C.ALL_COL_ALIGNMENTS[col] == "Ctr"
-            else Qt.AlignmentFlag.AlignLeft
-        )
-        '''
 
     @_qt_guard
     def data(self, index, role):
-        row = index.row()
-        col = index.column()
+        if not index:
+            return None
+        if not index.isValid():
+            return None
 
-        if col >= C.FIRST_BTN_IDX:
-            return None  # Delegate/View handles row action-buttons
+        # Quick Exit for roles we don't handle
+        if role not in (Qt.DisplayRole, C.ALERTS_ROLE, C.REPEAT_ROLE,
+                        Qt.FontRole, Qt.TextAlignmentRole):
+            return None
 
-        # --- Data columns ---
-        if role == Qt.FontRole and self._is_critical[row]:
+        row_idx = index.row()
+        col_idx = index.column()
+
+        # Skip action-button columns (they're handled in the View)
+        if col_idx >= C.FIRST_BTN_IDX:
+            return None
+
+        reminder = self.get_reminder(row_idx)
+        if not reminder:
+            return None
+
+        if role == Qt.ItemDataRole.DisplayRole:
+            # Derive the value to display
+            col_id = C.COLUMN_SCHEMA[col_idx].id
+            return self._get_display_value(reminder, col_id)
+
+        if role == C.ALERTS_ROLE:
+            # Query from view: How to display the Alerts button
+            return getattr(reminder, "alerts", False)   # ToDo: Implement this
+
+        if role == C.REPEAT_ROLE:
+            # Query from view: How to display the Repeat button
+            return getattr(reminder, "repeats", False) # ToDo: Implement this
+
+        # Styling
+        if role == Qt.FontRole and getattr(reminder, "is_critical", False):
             # Bold entire row if critical
-            f = QFont()
-            f.setBold(True)
-            return f
-
-        # Display raw value from cached rows
-        if role == Qt.DisplayRole:
-            row_data = self._data_rows[row]
-            value = row_data[col]
-            #print(f"ROW DATA: row={index.row()}, col={index.column()}, value={value!r}")
-            return value
+            return self._bold_font
 
         if role == Qt.TextAlignmentRole:
-            v_bit = self.v_alignment_for(row, col)
-            h_bit = self.h_alignment_for(row, col)
+            #print(f"Row {row_idx} alignment check: {reminder.has_notes}")
+            v_bit = v_alignment(reminder)
+            h_bit = h_alignment(col_idx)
             return v_bit | h_bit
 
         return None
-    
+
+    # Pass-thru m,ethod
+    def get_reminder(self, row: int):
+        """Delegates to the domain model to fetch the actual object."""
+        return self._reminders_model.get_reminder(row)
+
+    @staticmethod
+    def _get_display_value(reminder, col_id):
+        # If col_id is in UI_COL_MAP, use that value.
+        # Otherwise, default to the lowercase col_id, to map
+        # the Column ID to the ReminderItem attribute name.
+        # e.g., If col_id is "TIME", look for reminder.time
+        attr_name = C.UI_COL_MAP.get(col_id, col_id.lower())
+        value = getattr(reminder, attr_name, "")
+        return value
+
     def headerData(self, section, orientation, role=Qt.DisplayRole):  # type: ignore[attr-defined]
         # Only care about horizontal headers
         if orientation != Qt.Horizontal:  # type: ignore[attr-defined]
@@ -152,19 +160,28 @@ class QtTableModelAdapter(QAbstractTableModel):
         return super().headerData(section, orientation, role)
 
     def toggle_flag(self, row):
+        # 1. Tell the Domain Model to flip the bit
+        self._reminders_model.toggle_item_flag(row)
+
+        # 2. Notify the View (The only "Qt" part)
+        idx_start = self.index(row, 0)
+        idx_end = self.index(row, self.columnCount() - 1)
+        self.dataChanged.emit(idx_start, idx_end)
+    '''
+    def toggle_flag(self, row):
         # Flip the UI state
         self._is_critical[row] = not self._is_critical[row]
     
         # Update the data model so persistence stays correct
         new_value = "!" if self._is_critical[row] else ""
-        self.reminders_model.set_flag_value(row, new_value)
+        self._reminders_model.set_flag_value(row, new_value)
         
-        self.load_rows()  # refresh cached rows & _is_critical
+        #self.load_rows()  # refresh cached rows & _is_critical
     
         # Notify the view that the entire row's font changed
         left = self.index(row, 0)
         right = self.index(row, self.columnCount() - 1)
         self.dataChanged.emit(left, right, [Qt.FontRole, Qt.DisplayRole, Qt.EditRole])
             # The "EditRole" signal tells the cell to repaint immediately
-
+    '''
 #endCLASS
