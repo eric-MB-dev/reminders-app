@@ -39,7 +39,7 @@ class ColDef:
 # USABE:  col_def = C.ALL_COLS[col#]
 COLUMN_SCHEMA = [
     # Data Columns
-    #      ID       Label        Align   Min   Max
+    #      ID       Label        Align   Min   Max   {Visible}
     ColDef("FLAG",  "!",         "Ctr",    8,   8),
     ColDef("DESCR", "Item",      "Left", 200, 360),
     ColDef("DAY",   "Day",       "Ctr",   40,  40),
@@ -106,22 +106,3 @@ IS_CRITICAL_FLAG = "!"
 # ("User Roles" start at 32 in Qt. Each additional "role" is one more.
 ALERTS_ROLE = Qt.ItemDataRole.UserRole      # Boolean: Are Alerts enabled?
 REPEAT_ROLE = Qt.ItemDataRole.UserRole + 1  # Boolean: Does it repeat?
-
-'''
-# Cache of action-button icons so they can be directly accessed,
-# rather than re-loaded 60 times a second when paint() methods run.
-_ICON_CACHE = {}
-
-def get_btn_icon(col_id: str) -> QIcon:
-    if col_id not in _ICON_CACHE:
-        # Map the Schema ID to the resource path
-        path_map = {
-            "EDIT":  ":/icons/edit.png",
-            "ALERT": ":/icons/alert.png",
-            "NEXT":  ":/icons/next.png",
-            "DEL":   ":/icons/delete.png",
-        }
-        path = path_map.get(col_id)
-        _ICON_CACHE[col_id] = QIcon(path) if path else QIcon()
-    return _ICON_CACHE[col_id]
-'''

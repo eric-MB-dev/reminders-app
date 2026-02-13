@@ -1,7 +1,6 @@
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtWidgets import QStyledItemDelegate
 
-
 from typing import cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from qt_table_model_adapter import QtTableModelAdapter
@@ -9,7 +8,7 @@ from qt_table_model_adapter import v_alignment
 
 class BaseCellDelegate(QStyledItemDelegate):
     # Default horizontal alignment
-    h_alignment_bit = Qt.AlignmentFlag.AlignCenter
+    h_alignment_bit = Qt.AlignmentFlag.AlignHCenter
 
     def __init__(self, parent=None):
         super().__init__(parent)
