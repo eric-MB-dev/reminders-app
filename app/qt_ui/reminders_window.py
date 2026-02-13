@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QAbstractItemView,
                                QHBoxLayout, QVBoxLayout, QTableView, QLayout,
                                QApplication, QSizePolicy, QPushButton, QLabel,
                                QStyledItemDelegate, QHeaderView, QTableWidgetItem,
+                               QAbstractScrollArea,
                                )
 from PySide6.QtCore import Qt, QTimer, QSize
 from PySide6.QtGui import QFont, QFontMetrics
@@ -71,6 +72,14 @@ class RemindersWindow(DateBannerWindow):
         vh.setDefaultSectionSize(16)
         vh.setSectionResizeMode(QHeaderView.ResizeToContents)
 
+        # Expand table to fill available space
+        self.table_view.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Preferred
+        )
+        # Alwauys let the window know how wide the table_view really is
+        self.table_view.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+
         # Central widget & layout
         main_container = QWidget()
         container_layout = QVBoxLayout(main_container)
@@ -78,11 +87,6 @@ class RemindersWindow(DateBannerWindow):
         container_layout.setSpacing(0)
         #container_layout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
 
-        # Expand table to fill available space
-        self.table_view.setSizePolicy(
-            QSizePolicy.Policy.Preferred,
-            QSizePolicy.Policy.Preferred
-        )
         container_layout.addWidget(self.table_view)
 
         # Horizontal column alignments
@@ -145,6 +149,12 @@ class RemindersWindow(DateBannerWindow):
         self.table_view.setSelectionMode(QAbstractItemView.NoSelection) # type: ignore[attr-defined]
         self.table_view.verticalHeader().setVisible(False)
         self.table_view.horizontalHeader().setStretchLastSection(False)
+
+        # Make scrollbars wide enough to be visible
+        self.table_view.setStyleSheet("""
+            QScrollBar:vertical { width: 16px; }
+            QScrollBar:horizontal { height: 16px; }
+        """)
 
         # Wiring to toggle the is_critical flag
         from delegates.flag_delegate import FlagDelegate
@@ -212,6 +222,9 @@ class RemindersWindow(DateBannerWindow):
         QTimer.singleShot(0, self.refresh_layout)  # schedule initial layout refresh once
 
     def refresh_layout(self):
+        # Don't display updates while we're making them
+        self.setUpdatesEnabled(False)
+
         # Size columns and rows
         self._apply_column_sizing()
         self.table_view.resizeRowsToContents()
@@ -221,6 +234,7 @@ class RemindersWindow(DateBannerWindow):
         self._update_action_buttons()
 
         # Tell window to tell the window that sizeHint has changed
+        self.table_view.resizeColumnsToContents()
         self.table_view.updateGeometry()  # Refresh the sizeHint
 
         # --- INSTRUMENTATION START ---
@@ -231,7 +245,7 @@ class RemindersWindow(DateBannerWindow):
 
         if self.layout():
             # Lock the layout to its new, smaller sizeHint
-            self.layout().setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
+            self.layout().setSizeConstraint(QLayout.SizeConstraint.SetMinAndMaxSize)
 
         self.setUpdatesEnabled(True) # "Thaw" the UI
         self.adjustSize()
@@ -294,7 +308,7 @@ class RemindersWindow(DateBannerWindow):
         # (Insurance policy. Data is supposed to be saved as we go along
         # But just in case..)
         try:
-            self.model.save_to_disk()
+            self.model_adapter.save_to_disk()
         except Exception as e:
             print(f"Final save failed:\n{e}")
 
@@ -320,7 +334,6 @@ class RemindersWindow(DateBannerWindow):
     def _apply_column_sizing(self):
         # Let Qt compute a baseline (helps with icon columns, etc.)
         self.table_view.resizeColumnsToContents()
-        ### NO LONBER NEEEDED....QApplication.processEvents() ###
 
         model = self.model_adapter
         view = self.table_view
@@ -432,13 +445,10 @@ class RemindersWindow(DateBannerWindow):
                     icon_color = btn_cfg["color"]
                     icon_size = QSize(22,22)
 
-                    if col_def.id == "ALERT":
+                    if col_def.id == "ALERTS":
                         icon_size = QSize(24,24)
-                        #TODO: Enable this
-                        pass
-                        # Assuming your model returns a boolean for 'is_muted'
-                        is_muted = model.data(model.index(row, col), Qt.ItemDataRole.UserRole)
-                        if is_muted:
+                        alerts_enabled = model.data(model.index(row, col), Qt.ItemDataRole.UserRole)
+                        if alerts_enabled:
                             icon_str = btn_cfg.get("off_icon", icon_str)
                             icon_color = "lightgray"
                             # "gray"--dark gray, "lightgray"--std light gray,

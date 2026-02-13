@@ -9,7 +9,8 @@ import table_constants as C
 from app.config import config
 
 class ReminderItem:
-    def __init__(self, when:dt.datetime, descr, flag="", notes="", repeat=""):
+    # TODO: Add "alert_schedule" to the constructor argument
+    def __init__(self, when:dt.datetime, descr, flags="", notes="", repeat=""):
         if when:
             assert isinstance(when, dt.datetime),\
                 f"Reminder.when must be datetime, got {type(when)}: {when}"
@@ -21,7 +22,7 @@ class ReminderItem:
 
         self.when: datetime = when  # date & time
         self.descr = descr          # main reminder descr
-        self.flag = flag            # "" or "!" (C.IS_CRTICAL_FLAG)
+        self.flags = flags          # "". "!" (C.IS_CRTICAL_FLAG), "A' (alerts enabled), or !A
         self.notes = notes          # optional notes/location
         self.repeat = repeat        # optional repetition setting
         self.alerts: bool = True         # The "Opposite" of muted
@@ -36,16 +37,30 @@ class ReminderItem:
         # Return True if all relevant fields match
         return (self.when == other.when and
                 self.descr == other.descr and
-                self.flag == other.flag and
+                self.flags == other.flags and
                 self.notes == other.notes and
                 self.repeat == other.repeat)
 
     @property
     def is_critical(self):
-        return self.flag == C.IS_CRITICAL_FLAG
+        return C.IS_CRITICAL_FLAG in self.flags
+
+    @property
+    def alerts_enabled(self):
+        return C.ALERTS_ENABLED_FLAG in self.flags
+
+    @alerts_enabled.setter
+    def alerts_enabled(self, value: bool):
+        # Remove it first to avoid duplicates like "AA"
+        self.flags = self.flags.replace(C.ALERTS_ENABLED_FLAG, "")
+        if value:
+            self.flags += C.ALERTS_ENABLED_FLAG
 
     def toggle_critical(self):
-        self.flag = "" if self.flag == C.IS_CRITICAL_FLAG else C.IS_CRITICAL_FLAG
+        if self.is_critical:
+            self.flags = self.flags.replace(C.IS_CRITICAL_FLAG, "")
+        else:
+            self.flags += C.IS_CRITICAL_FLAG
 
     @property
     def has_notes(self):
@@ -108,8 +123,9 @@ class ReminderItem:
             else:
                 time_str = t.strftime(config.time_display_format).lstrip("0").lower()
         '''
+        crtical_flag = C.IS_CRITICAL_FLAG if self.is_critical else ""
         return [
-            self.flag,
+            critical_flag,
             self.display_text,
             self.day_of_week,
             self.date,
@@ -128,7 +144,7 @@ class ReminderItem:
         date_str, time_str = fcn.iso_date_time(self.when)
         notes_str = fcn.encode_newlines(self.notes)  # Escape NLs
         repeat_str = self.repeat  # TODO: ENCODE REPETITION (it's the display value for now)
-        return [self.descr, date_str, time_str, self.flag, notes_str, repeat_str]
+        return [self.descr, date_str, time_str, self.flags, notes_str, repeat_str]
 
     @classmethod
     def from_csv_row(cls, row):

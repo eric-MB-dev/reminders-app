@@ -6,7 +6,7 @@ from app.config import config
 import utilities as fcn
 
 from app.qt_ui.reminders_window       import RemindersWindow
-from app.qt_ui.qt_table_model_adapter import QtTableModelAdapter
+from app.qt_ui.model_adapter import ModelAdapter
 from app.reminders_persistence        import RemindersPersistence
 from app.model.reminders_model        import RemindersModel
 
@@ -36,7 +36,7 @@ def main():
         domain_model = RemindersModel(data_manager=manager)
 
     app = QApplication(sys.argv)
-    rtm = QtTableModelAdapter(domain_model)
+    rtm = ModelAdapter(domain_model)
     window = RemindersWindow(rtm)
     ### NO LONGER NEEED. THe window shows itself when it's ready.
     ### window.show()

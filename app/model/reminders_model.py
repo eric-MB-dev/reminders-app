@@ -35,13 +35,12 @@ class RemindersModel:
         if not self._reminder_items:
             #TODO: RETURN "No entries yet. Add some!" in an otherwise empty row
             return []
-        
         return [item.to_display_row() for item in self._reminder_items]
-    
+    '''
     def set_flag_value(self, row, new_value):
         reminder = self._reminder_items[row]
         reminder.flag = new_value
-
+    '''
     def sort(self):
         # Sort in date/time order. No-date items at top. Where item has date(datetime.date). time(datetime.time), or None
         self.reminders.sort(key=lambda r: r.sort_key())
@@ -53,14 +52,13 @@ class RemindersModel:
     def remove(self, reminder):
         self.reminders.remove(reminder)
 
-    def get_reminder(self, index: int) -> ReminderItem:
+    def get_reminder(self, row_idx: int) -> ReminderItem:
         """Returns the ReminderItem at the specified index."""
         try:
-            return self._reminder_items[index]  # Or whatever your internal list is named
+            return self._reminder_items[row_idx]  # Or whatever your internal list is named
         except IndexError:
             return None  # Or handle as a Graceful Failure
 
-    # Inside your RemindersModel class
     def toggle_item_flag(self, row_idx):
         reminder = self.get_reminder(row_idx)
         reminder.toggle_critical()

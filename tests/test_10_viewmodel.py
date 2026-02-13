@@ -21,8 +21,8 @@ def test_viewmodel_row_width():
     for row in vm.display_rows():
         assert len(row) == len(C.VM_COLUMN_LABELS)
 
-from app.qt_ui.qt_table_model_adapter import QtTableModelAdapter
+from app.qt_ui.model_adapter import ModelAdapter
 def test_qt_adapter_column_count():
     vm = RemindersModel(reminder_list=sample_reminders())
-    qt_adapter = QtTableModelAdapter(vm)
+    qt_adapter = ModelAdapter(vm)
     assert qt_adapter.columnCount() == len(C.ALL_COL_LABELS)

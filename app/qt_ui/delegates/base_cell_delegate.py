@@ -3,8 +3,8 @@ from PySide6.QtWidgets import QStyledItemDelegate
 
 from typing import cast, TYPE_CHECKING
 if TYPE_CHECKING:
-    from qt_table_model_adapter import QtTableModelAdapter
-from qt_table_model_adapter import v_alignment
+    from model_adapter import ModelAdapter
+from model_adapter import v_alignment
 
 class BaseCellDelegate(QStyledItemDelegate):
     # Default horizontal alignment
@@ -23,7 +23,7 @@ class BaseCellDelegate(QStyledItemDelegate):
         """This code runs on non-critical rows, because paint() doesn't change it"""
         super().initStyleOption(option, index)
 
-        model = cast("QtTableModelAdapter", index.model())
+        model = cast("ModelAdapter", index.model())
         reminder = model.get_reminder(index.row())
         v_bit = v_alignment(reminder)
         option.displayAlignment = v_bit | self.h_alignment_bit

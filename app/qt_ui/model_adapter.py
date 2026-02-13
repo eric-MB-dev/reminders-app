@@ -42,7 +42,7 @@ def h_alignment(col_idx):
     col_def = C.ALL_COLS[col_idx]
     return C.ALIGN_MAP[col_def.align]
 
-class QtTableModelAdapter(QAbstractTableModel):
+class ModelAdapter(QAbstractTableModel):
     """
     Wrapper on my view_model class for Qt to talk to.
     """
@@ -100,7 +100,7 @@ class QtTableModelAdapter(QAbstractTableModel):
 
         if role == C.ALERTS_ROLE:
             # Query from view: How to display the Alerts button
-            return getattr(reminder, "alerts", False)   # ToDo: Implement this
+            return getattr(reminder, "alerts_enabled", False)
 
         if role == C.REPEAT_ROLE:
             # Query from view: How to display the Repeat button
@@ -126,6 +126,10 @@ class QtTableModelAdapter(QAbstractTableModel):
 
     @staticmethod
     def _get_display_value(reminder, col_id):
+        if col_id == "FLAG":
+            # The 'User Facing' string: Show the ! but hide (alerts-enabled) "A"
+            return C.IS_CRITICAL_FLAG if reminder.is_critical else ""
+
         # If col_id is in UI_COL_MAP, use that value.
         # Otherwise, default to the lowercase col_id, to map
         # the Column ID to the ReminderItem attribute name.
@@ -170,21 +174,8 @@ class QtTableModelAdapter(QAbstractTableModel):
         # Emit with specific roles to trigger an immediate repaint
         # (Qt.EditRole forcew qn immediate refresh)
         self.dataChanged.emit(left, right, [Qt.FontRole, Qt.DisplayRole, Qt.EditRole])
-    '''
-    def toggle_flag(self, row):
-        # Flip the UI state
-        self._is_critical[row] = not self._is_critical[row]
-    
-        # Update the data model so persistence stays correct
-        new_value = "!" if self._is_critical[row] else ""
-        self._reminders_model.set_flag_value(row, new_value)
-        
-        #self.load_rows()  # refresh cached rows & _is_critical
-    
-        # Notify the view that the entire row's font changed
-        left = self.index(row, 0)
-        right = self.index(row, self.columnCount() - 1)
-        self.dataChanged.emit(left, right, [Qt.FontRole, Qt.DisplayRole, Qt.EditRole])
-            # The "EditRole" signal tells the cell to repaint immediately
-    '''
+
+    def save_to_disk(self):
+        self._reminders_model.save_to_disk()
+
 #endCLASS

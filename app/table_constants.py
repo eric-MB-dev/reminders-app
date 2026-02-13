@@ -51,7 +51,7 @@ COLUMN_SCHEMA = [
 
     # Action-button Columns
     ColDef("EDIT",  "Edit",      "Ctr",   35,  35, icon="fa5s.pencil-alt"),
-    ColDef("ALERT", "Alerts",    "Ctr",   42,  42, icon="mdi.bell-off"),
+    ColDef("ALERTS", "Alerts",    "Ctr",   42,  42, icon="mdi.bell-off"),
     ColDef("NEXT",  "Next",      "Ctr",   40,  40, icon="ei.repeat"),
     ColDef("DEL",   "Del",       "Ctr",   35,  35, icon="fa5s.trash"),
 ]
@@ -65,10 +65,10 @@ Candidate buttons
         ei.repeat, ei.repeat-alt
 """
 ICON_MAP = {
-    "EDIT":  {"icon": "fa5s.pencil-alt", "color": "forestgreen"},           # "#FFD700"}, # Gold
-    "ALERT": {"icon": "fa5s.bell",       "off_icon": "mdi.bell-off", "color": "#FFBF00"}, # Amber
-    "NEXT":  {"icon": "ei.repeat",       "color": "dodgerblue"},
-    "DEL":   {"icon": "fa5s.trash",      "color": "#8b0000"}, # Deep Red
+    "EDIT":   {"icon": "fa5s.pencil-alt", "color": "forestgreen"},           # "#FFD700"}, # Gold
+    "ALERTS": {"icon": "fa5s.bell",       "off_icon": "mdi.bell-off", "color": "#FFBF00"}, # Amber
+    "NEXT":   {"icon": "ei.repeat",       "color": "dodgerblue"},
+    "DEL":    {"icon": "fa5s.trash",      "color": "#8b0000"}, # Deep Red
 }
 
 # Map horizontal-alignment-designation to UI marker
@@ -81,7 +81,8 @@ ALIGN_MAP = {
 # Map UI column names to ReminderItem attributes
 UI_COL_MAP = {
     "DESCR": "display_text",
-    "DAY": "day_of_week"
+    "DAY": "day_of_week",
+    "ALERTS": "alerts_enabled",
 }
 
 # --- The Active Set (The "Source of Truth" for the View) ---
@@ -99,8 +100,9 @@ for i, col in enumerate(ALL_COLS):
 # (Assumes "EDIT" is your first button column)
 FIRST_BTN_IDX = EDIT_IDX
 
-# Domain constants
+# CSV storage flags
 IS_CRITICAL_FLAG = "!"
+ALERTS_ENABLED_FLAG = "A"
 
 # --- Custom Data Roles ---
 # ("User Roles" start at 32 in Qt. Each additional "role" is one more.

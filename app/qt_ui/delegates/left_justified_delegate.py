@@ -14,7 +14,7 @@ import os
 
 from typing import cast, TYPE_CHECKING
 if TYPE_CHECKING:
-    from qt_table_model_adapter import QtTableModelAdapter
+    from model_adapter import ModelAdapter
 
 class LeftJustifiedDelegate(QStyledItemDelegate):
     """
@@ -111,8 +111,8 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         total_height = fm_bold.height() + len(remainder) * fm_norm.height()
 
         # Determine vertical alignment
-        from qt_table_model_adapter import v_alignment
-        model = cast("QtTableModelAdapter", index.model())
+        from model_adapter import v_alignment
+        model = cast("ModelAdapter", index.model())
         reminder = model.get_reminder(index.row())
         vert_align = v_alignment(reminder)
 
