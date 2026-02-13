@@ -6,15 +6,15 @@
 # It contains no UI logic and no knowledge of table columns or delegates.
 # This layer is the application’s data manager, supplying the ViewModel with domain objects.
 
-import os, csv
-import datetime as dt
+import os, csv, io
+#import datetime as dt
 # "dt" module contains date, time, & datetime classes
 
-from tkinter import messagebox, filedialog   #, simple dialogs
 from reminder_item import ReminderItem
 
 # noinspection PyPep8Naming
 import app.table_constants as C
+import utilities as fcn
 
 # The INTERNAL data model (separate from the storage model & the display model)
 class RemindersPersistence:
@@ -58,8 +58,20 @@ class RemindersPersistence:
 
     # Store reminders in user's CSV file
     def save(self, reminders):
-        #print(f"csv+path = {self.csv_path}")
-        fcn.atomic_save(reminders, self.csv_path)
+        # Create an in-memory text buffer
+        buffer = io.StringIO()
+
+        # Use the standard csv.writer on that buffer
+        writer = csv.writer(buffer, lineterminator='\n')
+
+        # Write the header and each row
+        writer.writerow(C.CSV_COL_HEADERS)
+        for r in reminders:
+            writer.writerow(r.to_csv_row())
+
+        # Extract the full string and pass to atomic_save
+        csv_data = buffer.getvalue()
+        fcn.atomic_save(csv_data, self.csv_path)
         '''
         with open(self.csv_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)

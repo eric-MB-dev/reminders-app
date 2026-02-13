@@ -159,14 +159,17 @@ class QtTableModelAdapter(QAbstractTableModel):
 
         return super().headerData(section, orientation, role)
 
-    def toggle_flag(self, row):
-        # 1. Tell the Domain Model to flip the bit
-        self._reminders_model.toggle_item_flag(row)
+    def toggle_flag(self, row_idx):
+        # Tell the Domain Model to flip the bit
+        self._reminders_model.toggle_item_flag(row_idx)
 
-        # 2. Notify the View (The only "Qt" part)
-        idx_start = self.index(row, 0)
-        idx_end = self.index(row, self.columnCount() - 1)
-        self.dataChanged.emit(idx_start, idx_end)
+        # Define the range (from first column to last)
+        left = self.index(row_idx, 0)
+        right = self.index(row_idx, self.columnCount() - 1)
+
+        # Emit with specific roles to trigger an immediate repaint
+        # (Qt.EditRole forcew qn immediate refresh)
+        self.dataChanged.emit(left, right, [Qt.FontRole, Qt.DisplayRole, Qt.EditRole])
     '''
     def toggle_flag(self, row):
         # Flip the UI state

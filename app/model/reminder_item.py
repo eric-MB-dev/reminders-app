@@ -44,6 +44,9 @@ class ReminderItem:
     def is_critical(self):
         return self.flag == C.IS_CRITICAL_FLAG
 
+    def toggle_critical(self):
+        self.flag = "" if self.flag == C.IS_CRITICAL_FLAG else C.IS_CRITICAL_FLAG
+
     @property
     def has_notes(self):
         return bool(self.notes)

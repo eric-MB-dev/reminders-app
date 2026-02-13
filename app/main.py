@@ -30,7 +30,7 @@ def main():
         from tests.fixtures.mock_reminders import mock_reminders
         domain_model = RemindersModel(reminder_list=mock_reminders)
     else:
-        csv_path = fcn.get_app_path(config.curr_csv_file)
+        csv_path = fcn.get_app_file_path(config.curr_csv_file)
         #print(f"csv_path: {csv_path}")
         manager = RemindersPersistence(csv_path)
         domain_model = RemindersModel(data_manager=manager)

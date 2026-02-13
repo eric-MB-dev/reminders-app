@@ -1,7 +1,7 @@
 from PySide6.QtCore import QStandardPaths
 from pathlib import Path
 
-def get_app_path(filename):
+def get_app_file_path(filename):
     """
     Get the path to the user's version of this application file.
     """
@@ -12,21 +12,10 @@ def get_app_path(filename):
     path.mkdir(parents=True, exist_ok=True)
     return path / filename
 
-'''
-Quick & dirty version of atomic save
-def atomic_save(filename, data_string):
-    temp_file = filename + ".tmp"
-    with open(temp_file, "w") as f:
-        f.write(data_string)
-    # This call is atomic on Windows and Linux
-    os.replace(temp_file, filename)
-'''
-
+# Bullet proof atomic save
 import os
 import tempfile
-
-# Bullet proof version
-def atomic_save(target_path, data_string, encoding='utf-8'):
+def atomic_save(data_string, target_path, encoding='utf-8'):
     """
     Writes data to a temporary file in the same directory as
     target_path, then renames it to target_path atomically.

@@ -9,7 +9,7 @@
 # pure data/logic layer consumed by the Qt table model.)
 
 #import datetime as dt   # contains date, time, & datetime classes
-#import utils as fcn
+#import utilities as fcn
 
 # noinspection PyPep8Naming
 import app.table_constants as C
@@ -63,18 +63,11 @@ class RemindersModel:
     # Inside your RemindersModel class
     def toggle_item_flag(self, row_idx):
         reminder = self.get_reminder(row_idx)
-        if reminder:
-            # Perform the logic
-            reminder.flag = C.IS_CRITICAL_FLAG if not reminder.flag else ""
-
-            # Notify the View to repaint
-            self.dataChanged.emit(self.index(row_idx, 0), self.index(row_idx, 0))
-
-            # Persist the change immediately
-            self.save_to_disk()
+        reminder.toggle_critical()
+        self.save_to_disk()  # Persist the change
 
     def save_to_disk(self):
         # Now that you stored the manager, this works!
-        self.data_manager.save(self._reminders)
+        self.data_manager.save(self._reminder_items)
 
 #end CLASS ReminderDataModel

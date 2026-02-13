@@ -21,7 +21,7 @@ class AppConfig(QObject):
         # Required for QObject signals to work
         super().__init__()
 
-        self.config_path = fcn.get_app_path(CONFIG_FILE)
+        self.config_path = fcn.get_app_file_path(CONFIG_FILE)
 
         self.curr_csv_file = DEFAULT_CSV_FILE
         # USAGE: curr_csv_path = fcn.get_app_path(curr_csv_file)

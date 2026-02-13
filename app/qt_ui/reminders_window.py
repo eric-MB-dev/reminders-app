@@ -286,10 +286,19 @@ class RemindersWindow(DateBannerWindow):
         w = size.width()
         h = size.height()
 
+        # Save window position
         config.window_geom = (w, h, x, y)
         config.save_config()
 
-        QApplication.quit()
+        # Save data
+        # (Insurance policy. Data is supposed to be saved as we go along
+        # But just in case..)
+        try:
+            self.model.save_to_disk()
+        except Exception as e:
+            print(f"Final save failed:\n{e}")
+
+        # QApplication.quit() -- # PyQt handles the quit() automatically when the window vanishes.
         event.accept()
 
     def clamp_to_screen(self, x, y, w, h):
