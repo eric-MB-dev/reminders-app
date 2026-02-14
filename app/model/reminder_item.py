@@ -55,6 +55,20 @@ class ReminderItem:
         self._flags = self._flags.replace(C.ALERTS_ENABLED_FLAG, "")
         if value:
             self._flags += C.ALERTS_ENABLED_FLAG
+        self._order_the_flags()
+
+    def _order_the_flags(self):
+        """Normalizes the string to a predictable '!A' format."""
+        # 1. Check current state via substring search
+        critical = C.IS_CRITICAL_FLAG in self._flags
+        alerts = C.ALERTS_ENABLED_FLAG in self._flags
+
+        # 2. Rebuild from scratch in the 'Correct' order
+        new_str = ""
+        if critical: new_str += C.IS_CRITICAL_FLAG
+        if alerts:   new_str += C.ALERTS_ENABLED_FLAG
+
+        self._flags = new_str
 
     @property
     def alert_sched(self):
@@ -72,6 +86,7 @@ class ReminderItem:
             self._flags = self._flags.replace(C.IS_CRITICAL_FLAG, "")
         else:
             self._flags += C.IS_CRITICAL_FLAG
+        self._order_the_flags()
 
     @property
     def has_notes(self):

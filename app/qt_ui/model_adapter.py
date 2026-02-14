@@ -78,7 +78,7 @@ class ModelAdapter(QAbstractTableModel):
             return None
 
         # Quick Exit for roles we don't handle
-        if role not in (Qt.DisplayRole, C.ALERTS_ROLE, C.REPEAT_ROLE,
+        if role not in (Qt.DisplayRole, C.ALERTS_ROLE, C.REPEATS_ROLE,
                         Qt.FontRole, Qt.TextAlignmentRole):
             return None
 
@@ -87,7 +87,9 @@ class ModelAdapter(QAbstractTableModel):
 
         # Skip action-button columns (they're handled in the View)
         if col_idx >= C.FIRST_BTN_IDX:
-            return None
+            # Skip if the View is asking for TEXT (DisplayRole)
+            if role == Qt.ItemDataRole.DisplayRole:
+                return None
 
         reminder = self.get_reminder(row_idx)
         if not reminder:
@@ -100,10 +102,11 @@ class ModelAdapter(QAbstractTableModel):
 
         if role == C.ALERTS_ROLE:
             # Query from view: How to display the Alerts button
-            return False
-            #return getattr(reminder, "alerts_enabled", False)
+            value = getattr(reminder, "alerts_enabled", False)
+            #print(f"ROW {row_idx} | FLAGS: '{reminder._flags}' | ALERTS: {value}")
+            return value
 
-        if role == C.REPEAT_ROLE:
+        if role == C.REPEATS_ROLE:
             # Query from view: How to display the Repeat button
             return getattr(reminder, "repeats", False) # ToDo: Implement this
 

@@ -455,7 +455,7 @@ class RemindersWindow(DateBannerWindow):
                             # #E0E0E0--very soft gray for disabled states
 
                     if col_def.id == "NEXT":
-                        has_repeats = model.data(model.index(row, col), C.REPEAT_ROLE)
+                        has_repeats = model.data(model.index(row, col), C.REPEATS_ROLE)
                         if not has_repeats:
                             icon_color = "lightgray"
 

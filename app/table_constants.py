@@ -106,4 +106,4 @@ ALERTS_ENABLED_FLAG = "A"
 # --- Custom Data Roles ---
 # ("User Roles" start at 32 in Qt. Each additional "role" is one more.
 ALERTS_ROLE = Qt.ItemDataRole.UserRole      # Boolean: Are Alerts enabled?
-REPEAT_ROLE = Qt.ItemDataRole.UserRole + 1  # Boolean: Does it repeat?
+REPEATS_ROLE = Qt.ItemDataRole.UserRole + 1  # Boolean: Does it repeat?
