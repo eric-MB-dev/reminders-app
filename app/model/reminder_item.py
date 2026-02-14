@@ -20,12 +20,12 @@ class ReminderItem:
 
         # ToDo: Take muted/active state as an init argument
 
-        self.when: datetime = when  # date & time
-        self.descr = descr          # main reminder descr
-        self.flags = flags          # "". "!" (C.IS_CRTICAL_FLAG), "A' (alerts enabled), or !A
-        self.notes = notes          # optional notes/location
-        self.alert_sched = None     # TODO: Store and read back actual alert-schedule
-        self.repeat: str = None     # TODO: Display in table as "Daily", "Weekly", "Custom", etc.
+        self._when: datetime = when  # date & time
+        self._descr = descr          # main reminder descr
+        self._flags = flags          # "". "!" (C.IS_CRTICAL_FLAG), "A' (alerts enabled), or !A
+        self._notes = notes           # optional notes (location, what to bring, etc)
+        self._alert_sched = None     # TODO: Store and read back actual alert-schedule
+        self._repeats: str = ""      # TODO: Display in table as "Daily", "Weekly", "Custom", etc.
     #end __init__
 
     def __eq__(self, other):
@@ -34,67 +34,88 @@ class ReminderItem:
             return False
 
         # Return True if all relevant fields match
-        return (self.when == other.when and
-                self.descr == other.descr and
-                self.flags == other.flags and
-                self.notes == other.notes and
-                self.alert_sched == other.alert_sched and
-                self.repeat == other.repeat)
+        return (self._when == other._when and
+                self._descr == other._descr and
+                self._flags == other._flags and
+                self._notes == other._notes and
+                self._alert_sched == other._alert_sched and
+                self._repeats == other._repeats)
 
     @property
     def is_critical(self):
-        return C.IS_CRITICAL_FLAG in self.flags
+        return C.IS_CRITICAL_FLAG in self._flags
 
     @property
     def alerts_enabled(self):
-        return C.ALERTS_ENABLED_FLAG in self.flags
+        return C.ALERTS_ENABLED_FLAG in self._flags
 
     @alerts_enabled.setter
     def alerts_enabled(self, value: bool):
         # Remove it first to avoid duplicates like "AA"
-        self.flags = self.flags.replace(C.ALERTS_ENABLED_FLAG, "")
+        self._flags = self._flags.replace(C.ALERTS_ENABLED_FLAG, "")
         if value:
-            self.flags += C.ALERTS_ENABLED_FLAG
+            self._flags += C.ALERTS_ENABLED_FLAG
+
+    @property
+    def alert_sched(self):
+        if self._alert_sched == none:
+            return ""
+        # ToDO: Temporary. Replace with decoded-schedule object (or string)
+        return ""
+
+    @alert_sched.setter
+    def alert_sched(self, value: str):
+        self._alert_sched = value
 
     def toggle_critical(self):
         if self.is_critical:
-            self.flags = self.flags.replace(C.IS_CRITICAL_FLAG, "")
+            self._flags = self._flags.replace(C.IS_CRITICAL_FLAG, "")
         else:
-            self.flags += C.IS_CRITICAL_FLAG
+            self._flags += C.IS_CRITICAL_FLAG
 
     @property
     def has_notes(self):
-        return bool(self.notes)
+        return bool(self._notes)
+
+    @property
+    def repeats(self):
+        # ToDO: Return simplified string: "Daily", "Weekly", "Monthly", Yearly", or "Custom"
+        return ""
+
+    @repeats.setter
+    def repeats(self, value: str):
+        #TODO: Convert incoming object or string into a string for storage
+        self._alert_sched = value
 
     @property
     def day_of_week(self):
         # Derived field, not stored in CSV
-        if not self.when:
+        if not self._when:
             return ""
-        return self.when.date().strftime("%a")
+        return self._when.date().strftime("%a")
 
     @property
-    def display_text(self):
-        # combine descr and notes for UI
-        if self.notes:
-            return f"{self.descr}\n{self.notes}"
-        return self.descr
+    def descr(self):
+        # Combine descr and notes for UI
+        if self._notes:
+            return f"{self._descr}\n{self._notes}"
+        return self._descr
 
     @property
     def date(self):
-        if not self.when:
+        if not self._when:
             return ""
 
-        d = self.when.date()
+        d = self._when.date()
         date_fmt = config.date_display_format
-        return d.strftime(date_fmt)
+        return d.strftime(date_fmt).lstrip("0")
 
     @property
     def time(self):
-        if not self.when:
+        if not self._when:
             return ""
 
-        t = self.when.time()
+        t = self._when.time()
         if t.hour == 0 and t.minute == 0:
             time_str = ""
         else:
@@ -103,37 +124,7 @@ class ReminderItem:
             time_str = t.strftime(time_fmt).lstrip("0").lower()
         return time_str
 
-    def toggle_item_flag(self, index):
-        item = self.reminders[index]
-        item.is_critical = not item.is_critical  # Flip the actual object
-        self.auto_save()  # Handle persistence immediately
 
-    def to_display_row(self):
-        #Time with no leading zero, Lowercase "am/pm". So: 6:00 am)"""
-        #from app.config import config
-        #date_fmt = config.date_display_format
-        #time_fmt = config.time_display_format
-        #date_str, time_str = fcn.fmt_date_time(self.when, date_fmt, time_fmt)
-        '''
-        if self.when:
-            date_str = self.when.date().strftime()
-            t = self.when.time()
-            if t.hour == 0 and t.minute == 0:
-                time_str = ""
-            else:
-                time_str = t.strftime(config.time_display_format).lstrip("0").lower()
-        '''
-        crtical_flag = C.IS_CRITICAL_FLAG if self.is_critical else ""
-        return [
-            critical_flag,
-            self.display_text,
-            self.day_of_week,
-            self.date,
-            self.time,
-            self.repeat,
-            self.countdown,
-        ]
-    
     #TODO: Implement repeats, plus encoding & decoding for serilaization
     #  in JSON format: {"type":"weekly","interval":1,"weekday":"Mon"}
     #  where type->Display column, interval 1 = "every week".
@@ -141,10 +132,10 @@ class ReminderItem:
     def to_csv_row(self):
         """Convert to a list of strings for csv writer"""
         # csv col headers defined in table_constants: [Title,Date,Time,Flag,Notes,Repeat]
-        date_str, time_str = fcn.iso_date_time(self.when)
-        notes_str = fcn.encode_newlines(self.notes)  # Escape NLs
-        repeat_str = self.repeat  # TODO: ENCODE REPETITION (it's the display value for now)
-        return [self.descr, date_str, time_str, self.flags, notes_str, repeat_str]
+        date_str, time_str = fcn.iso_date_time(self._when)
+        notes_str = fcn.encode_newlines(self._notes)  # Escape NLs
+        repeat_str = self._repeats  # TODO: ENCODE REPETITION (it's the display value for now)
+        return [self._descr, date_str, time_str, self._flags, notes_str, repeat_str]
 
     @classmethod
     def from_csv_row(cls, row):
@@ -173,19 +164,19 @@ class ReminderItem:
         # False (0) comes before True (1)
         # Put items where 'when' is None at the top
         # (when it exists, sort on the 'when' value)
-        return self.when is not None, self.when
+        return self._when is not None, self._when
 
     @property
     def countdown(self):
-        if not self.when:
+        if not self._when:
             return ""
 
-        delta = self.when.date() - dt.date.today()
+        delta = self._when.date() - dt.date.today()
         days = delta.days
 
         # today_delta includes Minutes & hours
         now = dt.datetime.now()
-        today_delta = self.when - now
+        today_delta = self._when - now
         
         # Past
         if days < 0:

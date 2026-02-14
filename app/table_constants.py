@@ -44,9 +44,9 @@ COLUMN_SCHEMA = [
     ColDef("DESCR", "Item",      "Left", 200, 360),
     ColDef("DAY",   "Day",       "Ctr",   40,  40),
     ColDef("DATE",  "Date",      "Ctr",  100, 100),
-    ColDef("TIME",  "Time",      "Ctr",   82,  82),
+    ColDef("TIME",  "Time",      "Ctr",   84,  84),
     # Hide repeat column to shrink the window without breaking logic
-    ColDef("REPEAT",    "Repeat",    "Ctr",   66,  66), #, visible=False),
+    ColDef("REPEATS",    "Repeats",    "Ctr",   66,  66), #, visible=False),
     ColDef("COUNTDOWN", "Countdown", "Left", 100, 100),
 
     # Action-button Columns
@@ -80,7 +80,6 @@ ALIGN_MAP = {
 
 # Map UI column names to ReminderItem attributes
 UI_COL_MAP = {
-    "DESCR": "display_text",
     "DAY": "day_of_week",
     "ALERTS": "alerts_enabled",
 }
