@@ -24,9 +24,8 @@ class ReminderItem:
         self.descr = descr          # main reminder descr
         self.flags = flags          # "". "!" (C.IS_CRTICAL_FLAG), "A' (alerts enabled), or !A
         self.notes = notes          # optional notes/location
-        self.repeat = repeat        # optional repetition setting
-        self.alerts: bool = True         # The "Opposite" of muted
-        self.repeat: str = None          # e.g., "Daily", "Weekly", or Non
+        self.alert_sched = None     # TODO: Store and read back actual alert-schedule
+        self.repeat: str = None     # TODO: Display in table as "Daily", "Weekly", "Custom", etc.
     #end __init__
 
     def __eq__(self, other):
@@ -39,6 +38,7 @@ class ReminderItem:
                 self.descr == other.descr and
                 self.flags == other.flags and
                 self.notes == other.notes and
+                self.alert_sched == other.alert_sched and
                 self.repeat == other.repeat)
 
     @property

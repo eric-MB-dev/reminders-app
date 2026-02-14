@@ -100,7 +100,8 @@ class ModelAdapter(QAbstractTableModel):
 
         if role == C.ALERTS_ROLE:
             # Query from view: How to display the Alerts button
-            return getattr(reminder, "alerts_enabled", False)
+            return False
+            #return getattr(reminder, "alerts_enabled", False)
 
         if role == C.REPEAT_ROLE:
             # Query from view: How to display the Repeat button

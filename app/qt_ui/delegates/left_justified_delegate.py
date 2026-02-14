@@ -95,7 +95,7 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
             super().paint(painter, option, index)
             return
         
-        # Item is Critical: bold first line only ---
+        # Item is flagged  as critical: bold first line only ---
         text = index.data()
         if not text:
             super().paint(painter, option, index)
@@ -146,23 +146,22 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
                 break  # Stop drawing at bottom of the cell rectangle
 
             self.draw_text_line(painter, x, y, option.rect.width(), line, norm_font)
-            #painter.drawText(x, y + fm_norm.ascent(), line)
             y += fm_norm.height()
 
         painter.restore()
 
 
-    def draw_text_line(self, painter, x, y, width, text, font):
+    def draw_text_line(self, painter, x, y, width, line_text, font):
         """
         Draws a single line of text at (x, y) coordinates.
         Elides if the text exceeds the provided width.
         """
         fm = QFontMetrics(font)
-        # The '10' provides a 5px buffer on each side of the text
+        # Provides at end of the text
         available_width = width - 10
 
-        # Standardize the eliding here so no line ever spills
-        display_text = fm.elidedText(text, Qt.TextElideMode.ElideRight, available_width)
+        # Elide a long line so it doesn't spill over into the next cell
+        display_text = fm.elidedText(line_text, Qt.TextElideMode.ElideRight, available_width)
 
         painter.setFont(font)
         # Note: We use the baseline (y + ascent) for precise vertical control

@@ -447,15 +447,15 @@ class RemindersWindow(DateBannerWindow):
 
                     if col_def.id == "ALERTS":
                         icon_size = QSize(24,24)
-                        alerts_enabled = model.data(model.index(row, col), Qt.ItemDataRole.UserRole)
-                        if alerts_enabled:
+                        alerts_enabled = model.data(model.index(row, col), C.ALERTS_ROLE)
+                        if not alerts_enabled:
                             icon_str = btn_cfg.get("off_icon", icon_str)
                             icon_color = "lightgray"
                             # "gray"--dark gray, "lightgray"--std light gray,
                             # #E0E0E0--very soft gray for disabled states
 
                     if col_def.id == "NEXT":
-                        has_repeats = model.data(model.index(row, col), Qt.ItemDataRole.UserRole)
+                        has_repeats = model.data(model.index(row, col), C.REPEAT_ROLE)
                         if not has_repeats:
                             icon_color = "lightgray"
 
