@@ -2,7 +2,7 @@ import sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtCore import QSize
-from PySide6.QtGui import QFont, QFontMetrics, QTextDocument
+from PySide6.QtGui import QFont, QTextDocument # , QTextOption, QFontMetrics
 from PySide6.QtWidgets import QStyledItemDelegate
 
 # noinspection PyPep8Naming
@@ -26,6 +26,27 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
     def __init__(self, parent_table):
         super().__init__(parent_table)
         self.parent_table = parent_table # Now we can talk to the table!
+
+    # Allow copying from DESCR column
+    def createEditor(self, parent, option, index):
+        if index.column() == C.DESCR_IDX:
+            editor = QTextEdit(parent)
+            editor.setReadOnly(True)
+            # Allows mouse selection and keyboard (Ctrl+C)
+            editor.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse |
+                                           Qt.TextInteractionFlag.TextSelectableByKeyboard)
+            # Optional: remove the border so it blends in while selecting
+            editor.setFrameStyle(QFrame.Shape.NoFrame)
+            return editor
+        return super().createEditor(parent, option, index)
+
+    def setEditorData(self, editor, index):
+        # Pull data from model and shove it into the editor
+        text = index.data(Qt.ItemDataRole.DisplayRole)
+        if isinstance(editor, QTextEdit):
+            editor.setPlainText(text)
+        else:
+            super().setEditorData(editor, index)
 
     def sizeHint(self, option, index):
         text = index.data(Qt.DisplayRole) or ""
@@ -56,6 +77,33 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
 
         height = int(doc.size().height()) - 6
         return QSize(width, height)
+
+    # Bold the first line only for a critical-item reminder
+    def draw_text_line(self, painter, x, y, width, line_text, font):
+        """
+        This was a *great* attempt. The idea was to elide a very long-line
+        (like a link) if the text exceeds the rectangle width.
+        BUT...
+         - The rectangle is provided by Qt.
+         - So the paint() re-write below didn't fix the problem
+         - To override it, we need to moodify sizeHint
+         - AND (the deal breaker) we *also* have to turn off resizeRowsToContents
+         - That fcn is doing too much good for us, right now. Turning it
+           off will lead to a plethora of other issues. Easier to live with
+           the occasional long-link that wraps onto a short extra line.
+        """
+        return
+    '''    
+        fm = QFontMetrics(font)
+        # Provides at end of the text
+        available_width = width - 10
+
+        # Elide a long line so it doesn't spill over into the next cell
+        display_text = fm.elidedText(line_text, Qt.TextElideMode.ElideRight, available_width)
+
+        painter.setFont(font)
+        # Note: We use the baseline (y + ascent) for precise vertical control
+        painter.drawText(x + 5, y + fm.ascent(), display_text)
     
     # Bold the first line only for a critical-item reminder
     def paint(self, painter, option, index):
@@ -74,8 +122,10 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         # Fonts & metrics
         bold_font = QFont(option.font)
         bold_font.setBold(True)
+        #
         norm_font = QFont(option.font)
         norm_font.setBold(False)
+        #
         fm_bold = QFontMetrics(bold_font)
         fm_norm = QFontMetrics(norm_font)
 
@@ -106,6 +156,8 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         remainder = lines[1:]
         
         painter.save()
+        # Ensure we never paint outside the intended cell boundary
+        painter.setClipRect(option.rect)
 
         # Compute total text height
         total_height = fm_bold.height() + len(remainder) * fm_norm.height()
@@ -132,8 +184,10 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
 
         # Draw first (bold) line
         painter.setFont(bold_font)
-        self.draw_text_line(painter, x, y, option.rect.width(), first, bold_font)
-        #painter.drawText(x, y + fm_bold.ascent(), first)
+        ###self.draw_text_line(painter, x, y, option.rect.width(), first, bold_font)
+
+        # drawText starts from a baseline (= ascent plus starting y)
+        painter.drawText(x, y + fm_bold.ascent(), first)
         y += fm_bold.height()
 
         # Draw remaining lines in maximum-size cell rectangle
@@ -145,24 +199,48 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
             if y + fm_norm.ascent() > cell_limit:
                 break  # Stop drawing at bottom of the cell rectangle
 
-            self.draw_text_line(painter, x, y, option.rect.width(), line, norm_font)
+            ###self.draw_text_line(painter, x, y, option.rect.width(), line, norm_font)
+            painter.drawText(x, y + fm_norm.ascent(), line)
             y += fm_norm.height()
 
         painter.restore()
+'''
 
+    def paint(self, painter, option, index):
+        # Get the data and determin state.
+        reminder = index.model().get_reminder(index.row())
+        is_critical = getattr(reminder, "is_critical", False)
 
-    def draw_text_line(self, painter, x, y, width, line_text, font):
-        """
-        Draws a single line of text at (x, y) coordinates.
-        Elides if the text exceeds the provided width.
-        """
-        fm = QFontMetrics(font)
-        # Provides at end of the text
-        available_width = width - 10
+        if not is_critical or index.column() != C.DESCR_IDX:
+            super().paint(painter, option, index)
+            return
 
-        # Elide a long line so it doesn't spill over into the next cell
-        display_text = fm.elidedText(line_text, Qt.TextElideMode.ElideRight, available_width)
+        text = index.data()
+        if not text: return
 
-        painter.setFont(font)
-        # Note: We use the baseline (y + ascent) for precise vertical control
-        painter.drawText(x + 5, y + fm.ascent(), display_text)
+        # Split the data
+        lines = text.strip().split("\n")
+        first = lines[0]
+        remainder = "\n".join(lines[1:]) if len(lines) > 1 else ""
+
+        painter.save()
+        painter.setClipRect(option.rect)
+
+        # Draw Bold First Line
+        bold_font = QFont(option.font)
+        bold_font.setBold(True)
+        painter.setFont(bold_font)
+
+        # We use a rect-based drawText to get automatic wrapping
+        # This returns the rectangle actually used by the first line
+        first_line_rect = painter.boundingRect(option.rect, Qt.TextFlag.TextWordWrap, first)
+        painter.drawText(option.rect, Qt.TextFlag.TextWordWrap, first)
+
+        # 5. Draw Remaining Lines (Normal)
+        if remainder:
+            painter.setFont(option.font)  # Back to normal
+            # Shift the drawing area down by the height of the first (wrapped) line
+            remainder_rect = option.rect.adjusted(0, first_line_rect.height(), 0, 0)
+            painter.drawText(remainder_rect, Qt.TextFlag.TextWordWrap, remainder)
+
+        painter.restore()

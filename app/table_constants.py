@@ -44,16 +44,16 @@ COLUMN_SCHEMA = [
     ColDef("DESCR", "Item",      "Left", 200, 360),
     ColDef("DAY",   "Day",       "Ctr",   40,  40),
     ColDef("DATE",  "Date",      "Ctr",  100, 100),
-    ColDef("TIME",  "Time",      "Ctr",   84,  84),
+    ColDef("TIME",  "Time",      "Ctr",   88,  88),
     # Hide repeat column to shrink the window without breaking logic
     ColDef("REPEATS",    "Repeats",    "Ctr",   66,  66), #, visible=False),
     ColDef("COUNTDOWN", "Countdown", "Left", 100, 100),
 
     # Action-button Columns
-    ColDef("EDIT",  "Edit",      "Ctr",   35,  35, icon="fa5s.pencil-alt"),
+    ColDef("EDIT",   "Edit",      "Ctr",   35,  35, icon="fa5s.pencil-alt"),
     ColDef("ALERTS", "Alerts",    "Ctr",   42,  42, icon="mdi.bell-off"),
-    ColDef("NEXT",  "Next",      "Ctr",   40,  40, icon="ei.repeat"),
-    ColDef("DEL",   "Del",       "Ctr",   35,  35, icon="fa5s.trash"),
+    ColDef("NEXT",   "Next",      "Ctr",   40,  40, icon="ei.repeat"),
+    ColDef("DEL",    "Del",       "Ctr",   35,  35, icon="fa5s.trash"),
 ]
 """
 Candidate buttons

@@ -58,11 +58,6 @@ class RemindersWindow(DateBannerWindow):
         # TUrn off cell selections &  highlighting on hover
         self.table_view.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         self.table_view.setMouseTracking(False)
-        self.table_view.setStyleSheet("""
-            QTableView::item:hover {
-                background-color: transparent;
-            }
-        """)
 
         # Add 3 dots to the end of a cell with too much data to display
         self.table_view.setTextElideMode(Qt.TextElideMode.ElideRight)
@@ -125,7 +120,7 @@ class RemindersWindow(DateBannerWindow):
         container_layout.addLayout(btn_row)
         #
         gear_btn = QPushButton("⚙")    # Unicode gear character
-        add_btn = QPushButton("Add Entry")
+        add_btn = QPushButton("Add List Entry")
         exit_btn = QPushButton("Exit")
         #
         btn_row.addWidget(gear_btn)
@@ -150,12 +145,15 @@ class RemindersWindow(DateBannerWindow):
         self.table_view.verticalHeader().setVisible(False)
         self.table_view.horizontalHeader().setStretchLastSection(False)
 
+        # Turn off cursor-hover cell background highlighting
         # Make scrollbars wide enough to be visible
         self.table_view.setStyleSheet("""
             QScrollBar:vertical { width: 16px; }
             QScrollBar:horizontal { height: 16px; }
+            QTableView::item:hover {
+                background-color: transparent;
+            }
         """)
-
         # Wiring to toggle the is_critical flag
         from delegates.flag_delegate import FlagDelegate
         self.table_view.setItemDelegateForColumn(
@@ -280,13 +278,6 @@ class RemindersWindow(DateBannerWindow):
             if current_h > max_h:
                 v_header.resizeSection(row, max_h)
 
-
-    #--------------------------------
-    # Item Action-button behaviours
-    #--------------------------------
-    def on_delete_clicked(self, row):
-        self.vm.delete_row(row)
-        self.model_adapter.layoutChanged.emit()
 
     # ------------------------
     # Window behaviors
@@ -497,7 +488,9 @@ class RemindersWindow(DateBannerWindow):
                     # Set it in the view
                     self.table_view.setIndexWidget(model.index(row, col), container)
 
+    # Identify current row, dispatch to handler for current column
     def on_button_click(self):
+        # Identify current row
         button = self.sender()
         action_id = button.property("action_id")
 
@@ -505,7 +498,46 @@ class RemindersWindow(DateBannerWindow):
         global_pos = button.mapTo(self.table_view.viewport(), button.rect().center())
         index = self.table_view.indexAt(global_pos)
 
-        if index.isValid():
-            row = index.row()
+        if not index.isValid():
+            return
+
+        row_idx = index.row()
+        col_idx = index.column()
+
+        # Dispatch to handler for current column
+        dispatch = {
+            "EDIT":    self.on_edit_action,
+            "ALERTS":  self.on_alerts_toggle_action,
+            "NEXT":    self.on_next_repeat_action,
+            "DEL":     self.on_delete_action,
+        }
+
+        # Invoke the specific method if it exists in the map, pass the row
+        action_method = dispatch.get(action_id)
+        if action_method:
+            action_method(row_idx)
+        else:
+            print(f"[DEBUG] No handler for action: {action_id} at row {row_idx}")
+
+    #--------------------------------
+    # Action-button behaviours
+    #--------------------------------
+    def on_delete_action(self, row):
+        print(f"[DEBUG] Delete-action called for row {row}")
+        return
+        self.vm.delete_row(row)
+        self.model_adapter.layoutChanged.emit()
+
+    def on_edit_action(self, row):
+        print(f"[DEBUG] edit-action called for row {row}")
+        pass
+
+    def on_alerts_toggle_action(self, row):
+        print(f"[DEBUG] alerts-toggle-action called for row {row}")
+        pass
+
+    def on_next_repeat_action(self, row):
+        print(f"[DEBUG] Next-repeat-action called for row {row}")
+        pass
 
 #endClass RemindersWindow

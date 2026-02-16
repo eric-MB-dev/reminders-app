@@ -23,9 +23,9 @@ class ReminderItem:
         self._when: datetime = when  # date & time
         self._descr = descr          # main reminder descr
         self._flags = flags          # "". "!" (C.IS_CRTICAL_FLAG), "A' (alerts enabled), or !A
-        self._notes = notes           # optional notes (location, what to bring, etc)
+        self._notes = notes          # optional notes (location, what to bring, etc)
         self._alert_sched = None     # TODO: Store and read back actual alert-schedule
-        self._repeats: str = ""      # TODO: Display in table as "Daily", "Weekly", "Custom", etc.
+        self._repeat_sched: str = "" # TODO: Display in table as "Daily", "Weekly", "Custom", etc.
     #end __init__
 
     def __eq__(self, other):
@@ -39,7 +39,7 @@ class ReminderItem:
                 self._flags == other._flags and
                 self._notes == other._notes and
                 self._alert_sched == other._alert_sched and
-                self._repeats == other._repeats)
+                self._repeat_sched == other._repeat_sched)
 
     @property
     def is_critical(self):
@@ -72,7 +72,7 @@ class ReminderItem:
 
     @property
     def alert_sched(self):
-        if self._alert_sched == none:
+        if self._alert_sched == None:
             return ""
         # ToDO: Temporary. Replace with decoded-schedule object (or string)
         return ""
@@ -95,12 +95,13 @@ class ReminderItem:
     @property
     def repeats(self):
         # ToDO: Return simplified string: "Daily", "Weekly", "Monthly", Yearly", or "Custom"
+        if not self._repeat_sched:
+            return ""
         return ""
 
-    @repeats.setter
-    def repeats(self, value: str):
-        #TODO: Convert incoming object or string into a string for storage
-        self._alert_sched = value
+    def set_repeat_sched(self, value: str):
+        #TODO: Decode JSON repeat string
+        self._repeat_sched = value
 
     @property
     def day_of_week(self):
@@ -149,7 +150,7 @@ class ReminderItem:
         # csv col headers defined in table_constants: [Title,Date,Time,Flag,Notes,Repeat]
         date_str, time_str = fcn.iso_date_time(self._when)
         notes_str = fcn.encode_newlines(self._notes)  # Escape NLs
-        repeat_str = self._repeats  # TODO: ENCODE REPETITION (it's the display value for now)
+        repeat_str = self._repeat_sched  # TODO: ENCODE JSON REPETITION (display value for now)
         return [self._descr, date_str, time_str, self._flags, notes_str, repeat_str]
 
     @classmethod
@@ -166,10 +167,11 @@ class ReminderItem:
         notes = row[4] if len(row) > 4 else ""
         if notes:
             notes = fcn.decode_newlines(notes)     # Un-escape NLs
+
         repeat = row[5] if len(row) > 5 else ""
         if repeat:
-            #TODO: Decode JSON repeat string
-            pass
+            #Decode JSON repeat string
+            self.set_repeat_sched(repeat)
 
         # ReminderItem init: when:dt.datetime, descr, flag, notes, repeat
         return cls(when, descr, flag, notes, repeat)
