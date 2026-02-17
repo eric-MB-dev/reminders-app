@@ -5,8 +5,8 @@ from PySide6.QtCore import QSettings, QObject, Signal
 import table_constants as C
 import utilities as fcn
 
-CONFIG_FILE = "config.ini"
-DEFAULT_CSV_FILE = 'reminders.csv'   # Default filename
+#CONFIG_FILE = "config.ini"
+#DEFAULT_CSV_FILE = 'reminders.csv'   # Default filename
 
 class AppConfig(QObject):
     """
@@ -21,9 +21,9 @@ class AppConfig(QObject):
         # Required for QObject signals to work
         super().__init__()
 
-        self.config_path = fcn.get_app_file_path(CONFIG_FILE)
+        self.config_path = fcn.get_app_file_path(C.INI_FILENAME)
 
-        self.curr_csv_file = DEFAULT_CSV_FILE
+        self.curr_csv_file = C.DEFAULT_CSV_FILENAME
         # USAGE: curr_csv_path = fcn.get_app_path(curr_csv_file)
         #          -- MUST be done AFTER QCoreApplication is created in main()
 
@@ -34,16 +34,19 @@ class AppConfig(QObject):
         self._cell_font_pt_size = C.DEFAULT_CELL_FONT_SIZE
         self._hdr_font_pt_size = C.DEFAULT_CELL_FONT_SIZE - 1
 
-        '''
-        from dataclasses import dataclass
-        @dataclass
-        class WindowPlacement:
-            x: int      # Left Edge
-            y: int      # Top edge
-            w: int      # Width
-            h: int      # Height
-         '''
+        # Max lines allowed in descr column (1, 2, or 3)
+        self.line_limit = 2
+
         self._geom_str = C.DEFAULT_GEOM_STR
+    #end __init__
+
+    @property
+    def scale_factor(self):
+        """
+        Multiplier relative to default font size 11 for proportional
+        scaling of column widths, row heights, and button sizes.
+        """
+        return self._cell_font_pt_size / C.DEFAULT_CELL_FONT_SIZE
 
     @property
     def cell_font_pt_size(self):
@@ -76,7 +79,8 @@ class AppConfig(QObject):
             f"Geometry values must be ints, got: w={w}, h={h}, x={x}, y={y}"
         self._geom_str = f"{w}x{h}, {x}x{y}"
 
-    def decode_geom(self, s: str):
+    @staticmethod
+    def decode_geom(s: str):
         try:
             size_part, pos_part = s.split(",")
             w_str, h_str = size_part.strip().split("x")
@@ -88,10 +92,19 @@ class AppConfig(QObject):
     def load_config(self):
         settings = QSettings(str(self.config_path), QSettings.IniFormat)
 
+        # Data formats
         # New value                # Config file path                    # Fallback value
         self.date_display_format = settings.value("display/date_format", self.date_display_format)
         self.time_display_format = settings.value("display/time_format", self.time_display_format)
+
+        # Sizing preferences
+        self._cell_font_pt_size = int(settings.value("display/font_size", self._cell_font_pt_size))
+        self._hdr_font_pt_size = self._cell_font_pt_size - 1
+        self.line_limit = int(settings.value("display/line_limit", self.line_limit))
+
+        # Window geometry
         self._geom_str = settings.value("window/geometry", self._geom_str)
+
         return
 
     def save_config(self):
@@ -100,6 +113,10 @@ class AppConfig(QObject):
         # Display settings
         settings.setValue("display/date_format", self.date_display_format)
         settings.setValue("display/time_format", self.time_display_format)
+
+        # Sizing settings
+        settings.setValue("display/font_size", self._cell_font_pt_size)
+        settings.setValue("display/line_limit", self.line_limit)
 
         # Window geometry
         settings.setValue("window/geometry", self._geom_str)

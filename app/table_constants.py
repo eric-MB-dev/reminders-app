@@ -44,7 +44,7 @@ COLUMN_SCHEMA = [
     ColDef("DESCR", "Item",      "Left", 200, 360),
     ColDef("DAY",   "Day",       "Ctr",   40,  40),
     ColDef("DATE",  "Date",      "Ctr",  100, 100),
-    ColDef("TIME",  "Time",      "Ctr",   88,  88),
+    ColDef("TIME",  "Time",      "Ctr",  100, 100),
     # Hide repeat column to shrink the window without breaking logic
     ColDef("REPEATS",    "Repeats",    "Ctr",   66,  66), #, visible=False),
     ColDef("COUNTDOWN", "Countdown", "Left", 100, 100),
@@ -107,3 +107,27 @@ ALERTS_ENABLED_FLAG = "A"
 # ("User Roles" start at 32 in Qt. Each additional "role" is one more.
 ALERTS_ROLE = Qt.ItemDataRole.UserRole      # Boolean: Are Alerts enabled?
 REPEATS_ROLE = Qt.ItemDataRole.UserRole + 1  # Boolean: Does it repeat?
+
+# -----------------------------
+# File names
+# -----------------------------
+INI_FILENAME = "reminders.ini"
+DEFAULT_CSV_FILENAME = "reminders.csv"
+
+# -----------------------------
+# Configuration options
+# -----------------------------
+
+COMMON_DATE_FORMATS = [
+    ("%m/%d/%y", "12/31/25"),
+    ("%Y-%m-%d", "2025-12-31"),
+    ("%b %d, %Y", "Dec 31, 2025"),
+    ("%d %b %Y", "31 Dec 2025"),
+]
+
+COMMON_TIME_FORMATS = [
+    ("%I:%M %p", "03:45 PM"),
+    ("%H:%M", "15:45"),
+    ("%I:%M:%S %p", "03:45:12 PM"),
+    ("%H:%M:%S", "15:45:12"),
+]

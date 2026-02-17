@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QAbstractItemView,
                                QHBoxLayout, QVBoxLayout, QTableView, QLayout,
                                QApplication, QSizePolicy, QPushButton, QLabel,
                                QStyledItemDelegate, QHeaderView, QTableWidgetItem,
-                               QAbstractScrollArea,
+                               QAbstractScrollArea, QDialog
                                )
 from PySide6.QtCore import Qt, QTimer, QSize
 from PySide6.QtGui import QFont, QFontMetrics
@@ -119,9 +119,28 @@ class RemindersWindow(DateBannerWindow):
         btn_row = QHBoxLayout()
         container_layout.addLayout(btn_row)
         #
+        # Future: Define these as self. variables, to adjust from refresh_ui_proportions()
         gear_btn = QPushButton("⚙")    # Unicode gear character
         add_btn = QPushButton("Add List Entry")
         exit_btn = QPushButton("Exit")
+        #
+        btn_font_size = 12   # ToDo: Future - config.btn_font_size (1 + cell_font_size)
+        gear_btn_font = gear_btn.font()
+        gear_btn_font.setWeight(QFont.Weight.Black)    # Or ExtraBold, to make it pop
+        gear_btn_font.setPointSize(btn_font_size + 2)
+        gear_btn.setFont(gear_btn_font)
+        #
+        add_btn_font = add_btn.font()
+        add_btn_font.setPointSize(btn_font_size)  # Make the icon pop
+        add_btn.setFont(add_btn_font)
+        #
+        exit_btn_font = exit_btn.font()
+        exit_btn_font.setPointSize(btn_font_size)  # Make the icon pop
+        exit_btn.setFont(exit_btn_font)
+        #
+        gear_btn.clicked.connect(self.on_gear_btn_clicked)
+        #TODO: add_btn.clicked.connect(self.on_add_btn_clicked)
+        exit_btn.clicked.connect(self.on_exit_btn_clicked)
         #
         btn_row.addWidget(gear_btn)
         btn_row.addStretch(1)
@@ -318,10 +337,6 @@ class RemindersWindow(DateBannerWindow):
 
         return x, y
 
-    def on_row_font_changed(self, _row):
-        self._apply_column_sizing()
-        ###self.adjust_window_width_to_columns()
-
     def _apply_column_sizing(self):
         # Let Qt compute a baseline (helps with icon columns, etc.)
         self.table_view.resizeColumnsToContents()
@@ -373,6 +388,9 @@ class RemindersWindow(DateBannerWindow):
             # Clamp
             final = max(min_w, min(padded, max_w))
             view.setColumnWidth(col, final)
+            if col in (C.DATE_IDX, C.TIME_IDX) :
+                print(f"Col {col}, Label: {col_def.label}, min:{col_def.min_w}, "
+                      f"max:{col_def.max_w}, final: {final}")
 
     def compute_descr_col_width(self):
         """
@@ -539,5 +557,63 @@ class RemindersWindow(DateBannerWindow):
     def on_next_repeat_action(self, row):
         print(f"[DEBUG] Next-repeat-action called for row {row}")
         pass
+
+    def on_exit_btn_clicked(self):
+        self.close()
+
+    def on_gear_btn_clicked(self):
+        """Handler for the 'Settings' button in the main window."""
+        from config_dialog import ConfigDialog
+
+        # 1. Create and show the dialog
+        dialog = ConfigDialog(self)
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            # 2. Extract the results dictionary from the dialog
+            new_settings = dialog.get_results()
+
+            # 3. Update the singleton (Setters will trigger signals if values change)
+            config.cell_font_pt_size = new_settings["font_size"]
+            config.line_limit = new_settings["line_limit"]
+            config.date_display_format = new_settings["date_format"]
+            config.time_display_format = new_settings["time_format"]
+
+            print("[DEBUG] New Settings:"
+                  f"font size: {config.cell_font_pt_size} "
+                  f"line limit: {config.line_limit} "
+                  # TODO: Enable these after adding the controls to the dialog
+                  #f"date format: {config.date_display_format} "
+                  #f"time format: {config.time_display_format}"
+                  )
+
+            # Refresh the UI to reflect font changes
+            self.refresh_ui_proportions()
+            return
+
+            # TODO: Save configuration to disk
+            config.save_config()
+            print("[DEBUG] Settings applied and saved.")
+
+    def refresh_ui_proportions(self):
+        """
+        Adjust the table's visual dimensions based on the current font scale.
+        """
+        scale = config.scale_factor
+
+        # Update Table Font
+        table_font = self.table_view.font()
+        table_font.setPointSize(config.cell_font_pt_size)
+        self.table_view.setFont(table_font)
+
+        # Proportional Icons (Base 24px)
+        new_icon_size = int(24 * scale)
+        self.table_view.setIconSize(QSize(new_icon_size, new_icon_size))
+
+        # Proportional Column Widths (Base values from your 'good' font 11 look)
+        self.table_view.setColumnWidth(C.TIME_IDX, int(85 * scale))
+        self.table_view.setColumnWidth(C.DATE_IDX, int(110 * scale))
+
+        # Trigger the delegate/model to rethink row heights
+        self.model_adapter.layoutChanged.emit()
 
 #endClass RemindersWindow

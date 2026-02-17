@@ -1,11 +1,62 @@
-import tkinter as tk
-from tkinter import ttk
-import config
+from PySide6.QtWidgets import (QDialog, QFormLayout, QSpinBox, QComboBox,
+                               QDialogButtonBox, QVBoxLayout, QLabel)
+from PySide6.QtCore import Qt
+
+# noinspection PyPep8Naming
+import table_constants as C
+from app.config import config
 
 # Position of dialog relative to main frame
 X_OFFSET = 150
 Y_OFFSET = 150
 
+class ConfigDialog(QDialog):
+
+    def __init__(self, parent=None, current_settings=None):
+        super().__init__(parent)
+        self.setWindowTitle("Reminders System Settings")
+        self.settings = current_settings or {}
+
+        # Main Layout
+        self.layout = QVBoxLayout(self)
+        self.form = QFormLayout()
+
+        # TODO: Add the ported Tkinter fields here
+
+        # Font Size Selector (9-16)
+        self.font_size_spin = QSpinBox()
+        self.font_size_spin.setRange(9, 16)
+        initial_size = config.cell_font_pt_size
+        self.font_size_spin.setValue(self.settings.get("font_size", initial_size))
+        self.form.addRow("UI Font Size:", self.font_size_spin)
+
+        # Line Limit Selector (1, 2, or 3)
+        # TODO: Get current from config. Set it to default limit during init. Replace when read in.
+        self.line_limit_combo = QComboBox()
+        self.line_limit_combo.addItems(["1 Line", "2 Lines", "3 Lines"])
+        # Map 1,2,3 to index 0,1,2
+        current_limit = self.settings.get("line_limit", 2)        # Range 1..3 TODO: MAGIC NMBER
+        self.line_limit_combo.setCurrentIndex(current_limit - 1)  # Range 0..2
+        self.form.addRow("Max Lines per Row:", self.line_limit_combo)
+
+        # 3. Standard OK/Cancel Buttons
+        self.buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        self.buttons.accepted.connect(self.accept)
+        self.buttons.rejected.connect(self.reject)
+
+        self.layout.addLayout(self.form)
+        self.layout.addWidget(self.buttons)
+
+    def get_results(self):
+        """Returns the dictionary of new settings."""
+        return {
+            "font_size": self.font_size_spin.value(),
+            "line_limit": self.line_limit_combo.currentIndex() + 1
+        }
+
+'''
 class ConfigDialog(tk.Toplevel):
     # -----------------------------------------
     # Built‑in format definitions
@@ -122,3 +173,4 @@ class ConfigDialog(tk.Toplevel):
         }
         self.on_save(result)
         self.destroy()
+'''
