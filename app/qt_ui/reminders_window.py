@@ -577,14 +577,14 @@ class RemindersWindow(DateBannerWindow):
             config.line_limit = new_settings["line_limit"]
             config.date_display_format = new_settings["date_format"]
             config.time_display_format = new_settings["time_format"]
-
+            '''
             print("[DEBUG] New Settings:"
-                  f"font size: {config.cell_font_pt_size} "
-                  f"line limit: {config.line_limit} "
-                  f"date format: {config.date_display_format} "
+                  f"font size: {config.cell_font_pt_size}, "
+                  f"line limit: {config.line_limit}, "
+                  f"date format: {config.date_display_format}, "
                   f"time format: {config.time_display_format}"
                   )
-
+            '''
             # Refresh the UI to reflect font changes
             self.refresh_ui_proportions()
 

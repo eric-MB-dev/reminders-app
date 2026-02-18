@@ -1,5 +1,7 @@
 from PySide6.QtWidgets import (QDialog, QFormLayout, QSpinBox, QComboBox,
-                               QDialogButtonBox, QVBoxLayout, QLabel)
+                               QDialogButtonBox, QHBoxLayout, QVBoxLayout,
+                               QGroupBox, QButtonGroup, QRadioButton, QLabel,
+                               )
 from PySide6.QtCore import Qt
 
 # noinspection PyPep8Naming
@@ -17,29 +19,115 @@ class ConfigDialog(QDialog):
         self.setWindowTitle("Reminders System Settings")
         self.settings = current_settings or {}
 
+        # Extract the list of "Previews" (format labels) and create a "Label -> Format" mapping
+        self.date_labels = [item[1] for item in C.COMMON_DATE_FORMATS]
+        self.date_lookup = {item[1]: item[0] for item in C.COMMON_DATE_FORMATS}
+
+        self.time_labels = [item[1] for item in C.COMMON_TIME_FORMATS]
+        self.time_lookup = {item[1]: item[0] for item in C.COMMON_TIME_FORMATS}
+
         # Main Layout
         self.layout = QVBoxLayout(self)
         self.form = QFormLayout()
 
-        # TODO: Add the ported Tkinter fields here
+        # Date & Time format selectors
+        # Horizontal Layout for the side-by-side groups
+        format_layout = QHBoxLayout()
 
-        # Font Size Selector (9-16)
-        self.font_size_spin = QSpinBox()
-        self.font_size_spin.setRange(9, 16)
-        initial_size = config.cell_font_pt_size
-        self.font_size_spin.setValue(self.settings.get("font_size", initial_size))
-        self.form.addRow("UI Font Size:", self.font_size_spin)
+        # --- DATE FORMAT GROUP ---
+        self.date_group_box = QGroupBox("Date Format")
+        date_vbox = QVBoxLayout()
+        self.date_btn_group = QButtonGroup(self)  # Logical grouping, not visual
+        #
+        for label in self.date_labels:
+            fmt_val = self.date_lookup[label]
+            rb = QRadioButton(label)
+            rb.setProperty("raw_format", fmt_val)  # Store the format string in the widget
 
-        # Line Limit Selector (1, 2, or 3)
-        # TODO: Get current from config. Set it to default limit during init. Replace when read in.
+            # Check if this matches the current config
+            if fmt_val == config.date_display_format:
+                rb.setChecked(True)
+
+            self.date_btn_group.addButton(rb)
+            date_vbox.addWidget(rb)
+
+        self.date_group_box.setLayout(date_vbox)
+
+        # --- TIME FORMAT GROUP ---
+        self.time_group_box = QGroupBox("Time Format")
+        time_vbox = QVBoxLayout()
+        self.time_btn_group = QButtonGroup(self)
+        #
+        for label in self.time_labels:
+            fmt_val = self.time_lookup[label]
+            rb = QRadioButton(label)
+            rb.setProperty("raw_format", fmt_val)
+
+            if fmt_val == config.time_display_format:
+                rb.setChecked(True)
+
+            self.time_btn_group.addButton(rb)
+            time_vbox.addWidget(rb)
+
+        self.time_group_box.setLayout(time_vbox)
+
+        # Add groups to horizontal layout and then to main layout
+        format_layout.addWidget(self.date_group_box)
+        format_layout.addWidget(self.time_group_box)
+        self.layout.addLayout(format_layout)
+
+        # --- TOP: DATE/TIME FORMAT RADIO BUTTONS ---
+        format_layout = QHBoxLayout()
+        format_layout.setSpacing(20)
+        format_layout.addWidget(self.date_group_box)
+        format_layout.addWidget(self.time_group_box)
+        self.layout.addLayout(format_layout)
+
+        # --- MIDDLE: FONT AND #OF-LINES SELECTORS ---
+        selectors_layout = QHBoxLayout()
+        selectors_layout.setContentsMargins(10, 10, 10, 10)
+        selectors_layout.addStretch(1) # Centers the group
+
+        # Font Size Column
+        font_vbox = QVBoxLayout()
+        font_vbox.addWidget(QLabel("Font Size"))
+        self.font_size_combo = QComboBox()
+        font_list = [str(i) for i in range(9, 17)]
+        self.font_size_combo.addItems(font_list)
+        #
+        # Map the current font (e.g., 11) to the correct index
+        # Since 9 is at index 0, 11 is at index 2 (11 - 9 = 2)
+        current_font = config.cell_font_pt_size
+        self.font_size_combo.setCurrentIndex(current_font - 9)
+        #
+        font_vbox.addWidget(self.font_size_combo)
+        selectors_layout.addLayout(font_vbox)
+
+        selectors_layout.addSpacing(40) # Gap between font and lines
+
+        # Line Limit Column
+        lines_vbox = QVBoxLayout()
+        #
+        #  Center the Label
+        lbl_lines = QLabel("Max #of lines per row")
+        lines_vbox.addWidget(lbl_lines, alignment=Qt.AlignmentFlag.AlignCenter)
+        #
         self.line_limit_combo = QComboBox()
-        self.line_limit_combo.addItems(["1 Line", "2 Lines", "3 Lines"])
-        # Map 1,2,3 to index 0,1,2
-        current_limit = self.settings.get("line_limit", 2)        # Range 1..3 TODO: MAGIC NMBER
-        self.line_limit_combo.setCurrentIndex(current_limit - 1)  # Range 0..2
-        self.form.addRow("Max Lines per Row:", self.line_limit_combo)
+        self.line_limit_combo.addItems(["1", "2", "3"])
+        self.line_limit_combo.setCurrentIndex(config.line_limit - 1)
+        #
+        # Fix the Width & Center the ComboBox
+        # so it doesn't stretch to the full width of the label
+        self.line_limit_combo.setFixedWidth(50)
+        lines_vbox.addWidget(self.line_limit_combo, alignment=Qt.AlignmentFlag.AlignLeft)
 
-        # 3. Standard OK/Cancel Buttons
+        ##selectors_layout.addStretch(1) # Centers the group
+        selectors_layout.addLayout(lines_vbox)
+
+        self.layout.addLayout(selectors_layout)
+
+        # --- BOTTOM: BUTTONS ---
+        # Standard OK/Cancel Buttons
         self.buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
@@ -50,127 +138,17 @@ class ConfigDialog(QDialog):
         self.layout.addWidget(self.buttons)
 
     def get_results(self):
-        """Returns the dictionary of new settings."""
+        """
+        Returns the dictionary of new settings.
+        """
+
+        # checkedButton() returns the QRadioButton instance that is toggled
+        date_btn = self.date_btn_group.checkedButton()
+        time_btn = self.time_btn_group.checkedButton()
+
         return {
-            "font_size": self.font_size_spin.value(),
-            "line_limit": self.line_limit_combo.currentIndex() + 1
+            "font_size":   int(self.font_size_combo.currentText()),
+            "line_limit":  self.line_limit_combo.currentIndex() + 1, # 0..2 => 1..3
+            "date_format": date_btn.property("raw_format"),
+            "time_format": time_btn.property("raw_format"),
         }
-
-'''
-class ConfigDialog(tk.Toplevel):
-    # -----------------------------------------
-    # Built‑in format definitions
-    # -----------------------------------------
-    COMMON_DATE_FORMATS = [
-        ("%m/%d/%y", "12/31/25"),
-        ("%Y-%m-%d", "2025-12-31"),
-        ("%b %d, %Y", "Dec 31, 2025"),
-        ("%d %b %Y", "31 Dec 2025"),
-    ]
-
-    COMMON_TIME_FORMATS = [
-        ("%I:%M %p", "03:45 PM"),
-        ("%H:%M", "15:45"),
-        ("%I:%M:%S %p", "03:45:12 PM"),
-        ("%H:%M:%S", "15:45:12"),
-    ]
-
-    # -----------------------------------------
-    # Helper: build labels & lookup table
-    # -----------------------------------------
-    @staticmethod
-    def build_options(pairs):
-        labels = []
-        lookup = {}
-        for fmt, example in pairs:
-            label = f"{fmt}   ({example})"
-            labels.append(label)
-            lookup[label] = fmt
-        return labels, lookup
-
-    # -----------------------------------------
-    # Constructor
-    # -----------------------------------------
-    def __init__(self, parent, on_save):
-        super().__init__(parent)
-
-        # Position relative to parent
-        px = parent.winfo_rootx()
-        py = parent.winfo_rooty()
-        self.geometry(f"+{px + X_OFFSET}+{py + Y_OFFSET}")
-
-        self.title("Settings")
-        self.resizable(False, False)
-        self.on_save = on_save
-        self.values = {}
-
-        # Build dropdown options
-        self.date_labels, self.date_lookup = self.build_options(self.COMMON_DATE_FORMATS)
-        self.time_labels, self.time_lookup = self.build_options(self.COMMON_TIME_FORMATS)
-
-        # Determine which label matches current config values
-        def label_for(fmt, lookup):
-            for label, raw in lookup.items():
-                if raw == fmt:
-                    return label
-            return list(lookup.keys())[0]
-
-        # Build fields
-        fields = [
-            {
-                "name": "date_format",
-                "label": "Date Format",
-                "value": label_for(config.date_display_format, self.date_lookup),
-                "options": self.date_labels,
-            },
-            {
-                "name": "time_format",
-                "label": "Time Format",
-                "value": label_for(config.time_display_format, self.time_lookup),
-                "options": self.time_labels,
-            },
-        ]
-
-        # -------------------------------------------------
-        # Side‑by‑side radio groups for date & time formats
-        # -------------------------------------------------
-        # Variables
-        self.date_var = tk.StringVar(value=label_for(config.date_display_format, self.date_lookup))
-        self.time_var = tk.StringVar(value=label_for(config.time_display_format, self.time_lookup))
-
-        # Frames
-        date_frame = ttk.LabelFrame(self, text="Date Format")
-        time_frame = ttk.LabelFrame(self, text="Time Format")
-
-        date_frame.grid(row=0, column=0, padx=(10, 5), pady=10, sticky="nw")
-        ttk.Label(self, text=" ").grid(row=0, column=1)  # narrow separator
-        time_frame.grid(row=0, column=2, padx=(5, 10), pady=10, sticky="nw")
-
-        # Date radio buttons
-        for label in self.date_labels:
-            ttk.Radiobutton(date_frame, text=label, variable=self.date_var, value=label).pack(anchor="w")
-
-        # Time radio buttons
-        for label in self.time_labels:
-            ttk.Radiobutton(time_frame, text=label, variable=self.time_var, value=label).pack(anchor="w")
-
-        # Buttons
-        button_frame = tk.Frame(self)
-        button_frame.grid(row=len(fields), column=0, columnspan=2, pady=10)
-
-        tk.Button(button_frame, text="Save", command=self.save).pack(side="left", padx=10)
-        tk.Button(button_frame, text="Cancel", command=self.destroy).pack(side="right", padx=10)
-
-        self.grab_set() # Makes the dialog MODAL (nothing runs until it closes)
-
-    # -----------------------------------------
-    # Save handler
-    # -----------------------------------------
-    def save(self):
-        result = {
-            "date_format": self.date_lookup[self.date_var.get()],
-            "time_format": self.time_lookup[self.time_var.get()],
-        }
-        self.on_save(result)
-        self.destroy()
-'''
