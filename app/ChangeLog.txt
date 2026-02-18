@@ -1,3 +1,13 @@
+CHECKPOINT #7
+[x] Enable Settings & Exit buttons
+[x] Config Dialog converted from tkinter
+[x] ChangeLog.txt created with first 6 checkpoint task-lists
+[x] File saves
+[x] Config Dialog fixes
+[x] Dynamic column-sizing
+[x] Countdown column fixes
+[x] Proportional sizing based on current font
+
 CHECKPOINT #6
 [x] Display item action-buttons
 [x] Button Cosmetics
