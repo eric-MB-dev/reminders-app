@@ -202,7 +202,7 @@ class RemindersWindow(DateBannerWindow):
         '''
 
         # Restore saved window location and user configuration settings.
-        config.load_config()
+        config.load()
         (w, h, x, y) = config.window_geom
         self.move(x, y)
         # ToDo: Clamp the window to the screen (for a move to a smaller screen)
@@ -312,7 +312,7 @@ class RemindersWindow(DateBannerWindow):
 
         # Save window position
         config.window_geom = (w, h, x, y)
-        config.save_config()
+        config.save()
 
         # Save data
         # (Insurance policy. Data is supposed to be saved as we go along
@@ -388,9 +388,9 @@ class RemindersWindow(DateBannerWindow):
             # Clamp
             final = max(min_w, min(padded, max_w))
             view.setColumnWidth(col, final)
-            if col in (C.DATE_IDX, C.TIME_IDX) :
-                print(f"Col {col}, Label: {col_def.label}, min:{col_def.min_w}, "
-                      f"max:{col_def.max_w}, final: {final}")
+            #if col in (C.DATE_IDX, C.TIME_IDX) :
+            #    print(f"Col {col}, Label: {col_def.label}, min:{col_def.min_w}, "
+            #          f"max:{col_def.max_w}, final: {final}")
 
     def compute_descr_col_width(self):
         """
@@ -487,7 +487,7 @@ class RemindersWindow(DateBannerWindow):
                     btn.setProperty("action_id", col_def.id)
 
                     # Connect to the smart row-finder
-                    btn.clicked.connect(self.on_button_click)
+                    btn.clicked.connect(self.on_action_button_click)
 
                     # 2. Create a Container to center the icon
                     container = QWidget()
@@ -507,7 +507,7 @@ class RemindersWindow(DateBannerWindow):
                     self.table_view.setIndexWidget(model.index(row, col), container)
 
     # Identify current row, dispatch to handler for current column
-    def on_button_click(self):
+    def on_action_button_click(self):
         # Identify current row
         button = self.sender()
         action_id = button.property("action_id")
@@ -581,18 +581,16 @@ class RemindersWindow(DateBannerWindow):
             print("[DEBUG] New Settings:"
                   f"font size: {config.cell_font_pt_size} "
                   f"line limit: {config.line_limit} "
-                  # TODO: Enable these after adding the controls to the dialog
-                  #f"date format: {config.date_display_format} "
-                  #f"time format: {config.time_display_format}"
+                  f"date format: {config.date_display_format} "
+                  f"time format: {config.time_display_format}"
                   )
 
             # Refresh the UI to reflect font changes
             self.refresh_ui_proportions()
-            return
 
-            # TODO: Save configuration to disk
-            config.save_config()
-            print("[DEBUG] Settings applied and saved.")
+            # Save configuration to disk
+            config.save()
+            #print("[DEBUG] Settings applied and saved.")
 
     def refresh_ui_proportions(self):
         """
@@ -614,6 +612,7 @@ class RemindersWindow(DateBannerWindow):
         self.table_view.setColumnWidth(C.DATE_IDX, int(110 * scale))
 
         # Trigger the delegate/model to rethink row heights
+        self.table_view.resizeColumnsToContents()
         self.model_adapter.layoutChanged.emit()
 
 #endClass RemindersWindow

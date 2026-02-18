@@ -21,7 +21,7 @@ class AppConfig(QObject):
         # Required for QObject signals to work
         super().__init__()
 
-        self.config_path = fcn.get_app_file_path(C.INI_FILENAME)
+        self.config_path = ""
 
         self.curr_csv_file = C.DEFAULT_CSV_FILENAME
         # USAGE: curr_csv_path = fcn.get_app_path(curr_csv_file)
@@ -89,8 +89,11 @@ class AppConfig(QObject):
         except ValueError:
             return None
 
-    def load_config(self):
+    def load(self):
+        if self.config_path == "":
+            self.config_path = fcn.get_app_file_path(C.INI_FILENAME)
         settings = QSettings(str(self.config_path), QSettings.IniFormat)
+        #print(f"Loading settings from {self.config_path}")
 
         # Data formats
         # New value                # Config file path                    # Fallback value
@@ -107,7 +110,9 @@ class AppConfig(QObject):
 
         return
 
-    def save_config(self):
+    def save(self):
+        if self.config_path == "":
+            self.config_path = fcn.get_app_file_path(C.INI_FILENAME)
         settings = QSettings(str(self.config_path), QSettings.IniFormat)
 
         # Display settings
