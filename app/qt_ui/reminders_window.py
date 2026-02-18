@@ -232,7 +232,7 @@ class RemindersWindow(DateBannerWindow):
 
     def on_font_changed(self):
         # Tell the table to ask its delegates for new sizeHints.
-        self.table_view.resizeRowsToContents()
+        self.refresh_ui_proportions()
         self.table_view.viewport().update()
 
     # Window exists. Make visible to trigger the paint event we need
@@ -603,25 +603,35 @@ class RemindersWindow(DateBannerWindow):
 
     def refresh_ui_proportions(self):
         """
-        Adjust the table's visual dimensions based on the current font scale.
+        Proportional scaling of row heights, column widths, and icon sizes
+        based on original sizes and a scaling factor.
         """
         scale = config.scale_factor
 
-        # Update Table Font
+        # Update Table Font (This triggers the Delegate sizeHints)
         table_font = self.table_view.font()
         table_font.setPointSize(config.cell_font_pt_size)
         self.table_view.setFont(table_font)
 
-        # Proportional Icons (Base 24px)
+        # Scale Icons and Specific Column Widths
         new_icon_size = int(24 * scale)
         self.table_view.setIconSize(QSize(new_icon_size, new_icon_size))
 
-        # Proportional Column Widths (Base values from your 'good' font 11 look)
+        # We set these base widths, but resizeColumnsToContents will fine-tune them
         self.table_view.setColumnWidth(C.TIME_IDX, int(85 * scale))
         self.table_view.setColumnWidth(C.DATE_IDX, int(110 * scale))
 
-        # Trigger the delegate/model to rethink row heights
+        # Force Table to Recalculate
+        # This is essential so the window 'knows' how much space the table actually needs
         self.table_view.resizeColumnsToContents()
+        self.table_view.resizeRowsToContents()
         self.model_adapter.layoutChanged.emit()
+
+        # Give the OS a moment to process the new table size, then snap.
+        # processEvents() ensures the layout math is finished before we resize the window.
+        QApplication.processEvents()
+        self.adjustSize()
+
+        #print(f"[DEBUG] Refresh complete. Current Scale: {scale:.2f}")
 
 #endClass RemindersWindow
