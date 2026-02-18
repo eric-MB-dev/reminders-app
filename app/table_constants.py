@@ -47,7 +47,7 @@ COLUMN_SCHEMA = [
     ColDef("TIME",  "Time",      "Ctr",  100, 100),
     # Hide repeat column to shrink the window without breaking logic
     ColDef("REPEATS",    "Repeats",    "Ctr",   66,  66), #, visible=False),
-    ColDef("COUNTDOWN", "Countdown", "Left", 100, 100),
+    ColDef("COUNTDOWN", "Countdown", "Left", 125, 125),
 
     # Action-button Columns
     ColDef("EDIT",   "Edit",      "Ctr",   35,  35, icon="fa5s.pencil-alt"),

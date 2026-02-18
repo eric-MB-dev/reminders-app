@@ -209,7 +209,7 @@ class ReminderItem:
             return countdown
         
         # Right now
-        minutes = seconds / 60
+        minutes = int(seconds / 60)
         if minutes == 0:
             return "NOW"
         
@@ -230,8 +230,8 @@ class ReminderItem:
         
         # Today
         if days == 0:
-            hours = seconds // 3600
-            minutes = (seconds % 3600) // 60
+            hours = int(seconds // 3600)
+            minutes = int( (seconds % 3600) // 60 )
             
             if minutes == 0:
                 return "NOW"
