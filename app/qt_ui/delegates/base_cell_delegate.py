@@ -1,4 +1,5 @@
 from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QFont, QFontMetrics
 from PySide6.QtWidgets import QStyledItemDelegate
 
 from typing import cast, TYPE_CHECKING
@@ -14,11 +15,33 @@ class BaseCellDelegate(QStyledItemDelegate):
         super().__init__(parent)
 
     def sizeHint(self, option, index):
+        # Get the standard metrics
+        fm = option.fontMetrics
+
+        # Check if the row is critical (Needs Bold space)
+        reminder = index.model().get_reminder(index.row())
+        if reminder and reminder.is_critical:
+            bold_font = QFont(option.font)
+            bold_font.setBold(True)
+            fm = QFontMetrics(bold_font)  # Use the wider bold metrics
+
+        # Calculate width based on the actual text content
+        text = str(index.data() or "")
+        # horizontalAdvance measures the pixels the text actually takes up
+        width = fm.horizontalAdvance(text) + 10  # 10px for cell padding
+
+        # Keep row heights minimal
+        # (Qt ignores it for single-line rows, but it works great for multi-lines
+        h = fm.height() - 6
+
+        return QSize(width, h)
+    '''
+    def sizeHint(self, option, index):
         fm = option.fontMetrics
         #print("fm.height", fm.height())  # => 20
         h = fm.height() - 6
         return QSize(option.rect.width(), h)
-
+    '''
     def initStyleOption(self, option, index):
         """This code runs on non-critical rows, because paint() doesn't change it"""
         super().initStyleOption(option, index)

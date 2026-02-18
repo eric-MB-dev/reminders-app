@@ -52,8 +52,13 @@ class RemindersWindow(DateBannerWindow):
         # Reminders Table
         #self.table_view = QtRowAwareTableView()      # The Qt view model
         self.table_view = AutoResizingTableView()
+
+        # Domain-model adapter
         self.model_adapter = model_adapter      # My domain model = table_model.reminders_model
         self.table_view.setModel(self.model_adapter)
+        #
+        # Connect it to the data-changed listener
+        self.model_adapter.dataChanged.connect(self.on_data_modified)
 
         # TUrn off cell selections &  highlighting on hover
         self.table_view.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
@@ -225,7 +230,6 @@ class RemindersWindow(DateBannerWindow):
             return
         super().resizeEvent(event)
 
-
     def on_font_changed(self):
         # Tell the table to ask its delegates for new sizeHints.
         self.table_view.resizeRowsToContents()
@@ -237,6 +241,11 @@ class RemindersWindow(DateBannerWindow):
         # Remove row height minimums, so single-line rows match multi-line rows.
         #   (Must occur after the delegate is assigned.)
         QTimer.singleShot(0, self.refresh_layout)  # schedule initial layout refresh once
+
+    def on_data_modified(self, topLeft, bottomRight, roles):
+        # Fires whenever the critical flag is toggled,
+        # Handle the newly bold or not-bold data in the row.
+        self.table_view.resizeColumnsToContents()
 
     def refresh_layout(self):
         # Don't display updates while we're making them

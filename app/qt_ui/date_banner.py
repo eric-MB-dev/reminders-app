@@ -64,11 +64,25 @@ class DateBannerWindow(QMainWindow):
         # Add label to banner
         self.banner.addWidget(self.date_label)
 
+    # In RemindersWindow
     def on_font_changed(self):
-        new_font = self.font()
-        new_font.setPointSize(config.cell_font_pt_size)
-        self.setFont(new_font)
-        self.update()
+        # Invoke the superclass logic to resize the Banner font
+        super().on_font_changed()
+
+        # Update the Table's font to match the new config
+        table_font = self.table_view.font()
+        table_font.setPointSize(config.cell_font_pt_size)
+        self.table_view.setFont(table_font)
+
+        # Recalculate sizes
+        self.table_view.resizeColumnsToContents()
+        self.table_view.resizeRowsToContents()
+
+        # 4. Add the buffer to the Time Column specifically
+        time_w = self.table_view.columnWidth(C.TIME_IDX)
+        self.table_view.setColumnWidth(C.TIME_IDX, time_w + 10)
+
+        print(f"[DEBUG] UI Refreshed for Font Size: {config.cell_font_pt_size}")
 
     def update_date_label(self):
         today = dt.date.today()

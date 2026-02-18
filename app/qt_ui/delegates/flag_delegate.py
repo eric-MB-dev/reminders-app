@@ -1,6 +1,8 @@
-from PySide6.QtWidgets import QStyledItemDelegate
-from PySide6.QtCore import Qt, QEvent, QSize
+from PySide6.QtCore import QEvent, Signal
 from .base_cell_delegate import BaseCellDelegate
+
+# Class-level signal definition
+font_changed = Signal()
 
 class FlagDelegate(BaseCellDelegate):
 
@@ -9,6 +11,7 @@ class FlagDelegate(BaseCellDelegate):
         if event.type() == QEvent.MouseButtonRelease:
             # print("Delegate model is:", type(model))   # DEBUG
             table_model.toggle_flag(index.row())
+            self.font_changed.emit()
             return True
         return False
 

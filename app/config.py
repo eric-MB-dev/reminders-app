@@ -10,7 +10,7 @@ import utilities as fcn
 
 class AppConfig(QObject):
     """
-    Singleton configuration class.
+    Singleton configuration class. Emits font_changed signal.
     USAGE:
     from app.config import config
     """
