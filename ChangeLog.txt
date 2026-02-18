@@ -1,0 +1,75 @@
+CHECKPOINT #6
+[x] Display item action-buttons
+[x] Button Cosmetics
+[x] Atomic saves
+[x] Refactor QtTableModelAdapter to ALWAYS ask for reminder-item data from reminders model
+[x] Fixes
+    [x] Display multi-line descriptions properly
+    [x] Day of week, Date, and Time attributes
+    [x] Clean up QtTableModelAdapter (triple-backtick segments)
+    [x] Wider default date/time columns to allow for bold + reduce countdown width
+    [x] Fixed start-up window blink
+    [x] atomic file writes
+[x] Fixes
+    [x] toggle_flag() in tableAdapter (save changes & emit dataChanged signal)
+    [x] FlagDelegate needs v-alignTop
+[x] Fixes
+    [x] Make scroll bars wide enough to be visible.
+    [x] Window needs to expand horizontally so trash can isn't cut off.
+    [x] Window needs to expand vertically to display full table
+    [x] Alerts enabled/disabled => CSV storage
+    [x] Final save failed. ("model" attribute needed to be renamed)
+    [x] Adapter pass-thru for model.save_to_disk
+[x] Fixes
+    [x] Alerts propely default to disabled
+    [x] Clean up ReminderItem properties.
+    [x] Refactor to remove to_display_row from ReminderItem
+    [x] Amber bell appears for reminders that have the "A" flag
+    [x] Normalized order of stored flags
+[x] Wire up action buttons to dummy "button-clicked" echo methods.
+[x] Fixes
+    [x] Background hover-highlighting disabled once more (merged two style settings)
+    [x] Restored long-line wrapping in descr column
+    xxx Select & copy from descr col not realistically feasible. Edit the entry instead.
+
+CHECKPOINT #5
+BIGGER FIXES
+[x] Refactor: Convert config to a class
+[x] Refactor column definitions for less brittle changes.
+[x] Set up font-change signal and listeners.
+[x] Elide lines (truncation + ellipis) when text is too long for column width (e.g. link text)
+[x] Finish conversion to Column Schema
+
+CHECKPOINT #4
+FIXES
+[x] Column alignments
+[x] Custom window banner with 12 pt bold date centered on top
+[x] Turn off cell-highlighting when cursor hovers
+[x] Expand window height as well as width
+[x] Turn off darker cell-border when cursor is over a cell
+[x] Clip display of multi-line description cell to the maximum-height rectangle defined for it
+
+CHECKPOINT #3
+TESTS, PERSISTENCE
+[x] vm unit tests
+[x] Add Repeat col to Reminders window
+[x] RemindersPersistence
+[x] Activate load/store
+[x] Expand descr-col width when flag is toggled (recalculate column widths, I think)
+[x] Fix Off-by one-day bug in countdown calculation 
+
+CHECKPOINT #2
+FIXES
+[x] Vertically-centered cells for entries without a note..
+[x] Window position not being saved
+[x] Use fcn.get_app_path for location of csv file
+
+CHECKPOINT #1
+[x] Get correct minimum column sizes
+[x] Get the window sized to match
+[x] Restore window position during init
+[x] Restore dynamic descr-column expansion
+[x] Restore row expansion
+[x] Fix bold columns:
+[x] Verify column & windows sizing when an item is flagged
+[x] Verify when it is unchecked
