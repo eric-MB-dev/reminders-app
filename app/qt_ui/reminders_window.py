@@ -582,7 +582,7 @@ class RemindersWindow(DateBannerWindow):
             print(f"To add: {data}")
             return
 
-            # 3. Push to the adapter
+            # 3. Push to the adapter and save the data
             self.model_adapter.add_reminder(data)
 
             # 4. Trigger the Proportional Refresh
