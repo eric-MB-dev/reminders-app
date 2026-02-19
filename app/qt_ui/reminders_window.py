@@ -54,7 +54,7 @@ class RemindersWindow(DateBannerWindow):
         self.table_view = AutoResizingTableView()
 
         # Domain-model adapter
-        self.model_adapter = model_adapter      # My domain model = table_model.reminders_model
+        self.model_adapter: ModelAdapter = model_adapter      # My domain model = table_model.reminders_model
         self.table_view.setModel(self.model_adapter)
         #
         # Connect it to the data-changed listener
@@ -124,7 +124,6 @@ class RemindersWindow(DateBannerWindow):
         btn_row = QHBoxLayout()
         container_layout.addLayout(btn_row)
         #
-        # Future: Define these as self. variables, to adjust from refresh_ui_proportions()
         gear_btn = QPushButton("⚙")    # Unicode gear character
         add_btn = QPushButton("Add List Entry")
         exit_btn = QPushButton("Exit")
@@ -144,7 +143,7 @@ class RemindersWindow(DateBannerWindow):
         exit_btn.setFont(exit_btn_font)
         #
         gear_btn.clicked.connect(self.on_gear_btn_clicked)
-        #TODO: add_btn.clicked.connect(self.on_add_btn_clicked)
+        add_btn.clicked.connect(self.on_add_btn_clicked)
         exit_btn.clicked.connect(self.on_exit_btn_clicked)
         #
         btn_row.addWidget(gear_btn)
@@ -327,7 +326,7 @@ class RemindersWindow(DateBannerWindow):
         # (Insurance policy. Data is supposed to be saved as we go along
         # But just in case..)
         try:
-            self.model_adapter.save()
+            self.model_adapter.save_to_disk()
         except Exception as e:
             print(f"Final save failed:\n{e}")
 
@@ -569,6 +568,26 @@ class RemindersWindow(DateBannerWindow):
 
     def on_exit_btn_clicked(self):
         self.close()
+
+    def on_add_btn_clicked(self):
+        from reminder_dialog import ReminderDialog
+
+        # 1. Launch Dialog
+        dialog = ReminderDialog(self)
+        if dialog.exec() == QDialog.Accepted:
+            # 2. Grab the dict (now including our 'repeats' placeholder)
+            data = dialog.get_results()
+
+            #DEGUG
+            print(f"To add: {data}")
+            return
+
+            # 3. Push to the adapter
+            self.model_adapter.add_reminder(data)
+
+            # 4. Trigger the Proportional Refresh
+            # This ensures the new row's buttons and fonts match the current scale
+            self.refresh_ui_proportions()
 
     def on_gear_btn_clicked(self):
         """Handler for the 'Settings' button in the main window."""
