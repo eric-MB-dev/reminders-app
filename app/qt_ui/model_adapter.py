@@ -70,6 +70,20 @@ class ModelAdapter(QAbstractTableModel):
     def columnCount(self, parent=QModelIndex()):
         return len(C.ALL_COLS)
 
+    def delete_reminder(self, row):
+        #print(f"adapter.reomove_row called")
+
+        # Start a  'sandwich' (Parent index, start row, end row)
+        # to signal the start of a structural change that affects row_count.
+        # (Since we're only deleting one row, start and end are both 'row')
+        self.beginRemoveRows(QModelIndex(), row, row)
+
+        # Do the deed
+        self._reminders_model.delete(row)
+
+        # Close the 'sandwich'
+        self.endRemoveRows()
+
     @_qt_guard
     def data(self, index, role):
         if not index:
@@ -180,6 +194,6 @@ class ModelAdapter(QAbstractTableModel):
         self.dataChanged.emit(left, right, [Qt.FontRole, Qt.DisplayRole, Qt.EditRole])
 
     def save_to_disk(self):
-        self._reminders_model.save_to_disk()
+        self._reminders_model.save()
 
 #endCLASS

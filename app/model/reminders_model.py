@@ -16,6 +16,7 @@ import app.table_constants as C
 
 class RemindersModel:
     def __init__(self, data_manager=None, reminder_list=None):
+        self._reminder_items = []
         if reminder_list is not None:
             self._reminder_items = reminder_list
         elif data_manager is not None:
@@ -36,21 +37,18 @@ class RemindersModel:
             #TODO: RETURN "No entries yet. Add some!" in an otherwise empty row
             return []
         return [item.to_display_row() for item in self._reminder_items]
-    '''
-    def set_flag_value(self, row, new_value):
-        reminder = self._reminder_items[row]
-        reminder.flag = new_value
-    '''
+
     def sort(self):
         # Sort in date/time order. No-date items at top. Where item has date(datetime.date). time(datetime.time), or None
-        self.reminders.sort(key=lambda r: r.sort_key())
+        self.reminder_items.sort(key=lambda r: r.sort_key())
 
     def add(self, reminder):
-        self.reminders.append(reminder)
+        self.reminder_items.append(reminder)
         self.sort()
 
-    def remove(self, reminder):
-        self.reminders.remove(reminder)
+    def delete(self, row_idx):
+        del self._reminder_items[row_idx]
+        self.save()
 
     def get_reminder(self, row_idx: int) -> ReminderItem:
         """Returns the ReminderItem at the specified index."""
@@ -62,9 +60,9 @@ class RemindersModel:
     def toggle_item_flag(self, row_idx):
         reminder = self.get_reminder(row_idx)
         reminder.toggle_critical()
-        self.save_to_disk()  # Persist the change
+        self.save()  # Persist the change
 
-    def save_to_disk(self):
+    def save(self):
         # Now that you stored the manager, this works!
         self.data_manager.save(self._reminder_items)
 

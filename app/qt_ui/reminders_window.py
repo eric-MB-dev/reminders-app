@@ -327,7 +327,7 @@ class RemindersWindow(DateBannerWindow):
         # (Insurance policy. Data is supposed to be saved as we go along
         # But just in case..)
         try:
-            self.model_adapter.save_to_disk()
+            self.model_adapter.save()
         except Exception as e:
             print(f"Final save failed:\n{e}")
 
@@ -550,10 +550,10 @@ class RemindersWindow(DateBannerWindow):
     # Action-button behaviours
     #--------------------------------
     def on_delete_action(self, row):
-        print(f"[DEBUG] Delete-action called for row {row}")
-        return
-        self.vm.delete_row(row)
-        self.model_adapter.layoutChanged.emit()
+        #print(f"[DEBUG] Delete-action called for row {row}")
+        self.model_adapter.delete_reminder(row)
+        # Not needed. The gets adapter's signal and refreshes itself
+        #self.model_adapter.layoutChanged.emit()
 
     def on_edit_action(self, row):
         print(f"[DEBUG] edit-action called for row {row}")
