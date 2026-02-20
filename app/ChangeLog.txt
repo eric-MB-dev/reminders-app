@@ -1,3 +1,11 @@
+CHECKPOINT #8
+[x] Activate item-Delete action button
+[x] ReminderDialog created and tested
+[x] Finalize add-item operation (tested and working)
+[x] Usability enhancment
+[x] Calendar-selection Bug Fixes
+[x] Activate the Edit item-action button
+
 CHECKPOINT #7
 [x] Enable Settings & Exit buttons
 [x] Config Dialog converted from tkinter
