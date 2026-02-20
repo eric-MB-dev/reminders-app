@@ -551,8 +551,15 @@ class RemindersWindow(DateBannerWindow):
     def on_delete_action(self, row):
         #print(f"[DEBUG] Delete-action called for row {row}")
         self.model_adapter.delete_reminder(row)
-        # Not needed. The gets adapter's signal and refreshes itself
-        #self.model_adapter.layoutChanged.emit()
+
+        # --- SNAP TO NEW WINDOW SIZE ---
+        # Update window's vertical geometry for the new row count
+        self.table_view.updateGeometry()
+        # Tell the table: "Don't try to grow; just be as big as your rows"
+        self.table_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
+        self.layout().activate()  # # Hey Layout: Re-run yuour math
+
+        self.adjustSize()
 
     def on_edit_action(self, row):
         print(f"[DEBUG] edit-action called for row {row}")
@@ -579,8 +586,7 @@ class RemindersWindow(DateBannerWindow):
             data = dialog.get_results()
 
             #DEGUG
-            print(f"To add: {data}")
-            return
+            #print(f"To add: {data}")
 
             # 3. Push to the adapter and save the data
             self.model_adapter.add_reminder(data)
@@ -588,6 +594,7 @@ class RemindersWindow(DateBannerWindow):
             # 4. Trigger the Proportional Refresh
             # This ensures the new row's buttons and fonts match the current scale
             self.refresh_ui_proportions()
+            self._update_action_buttons()
 
     def on_gear_btn_clicked(self):
         """Handler for the 'Settings' button in the main window."""

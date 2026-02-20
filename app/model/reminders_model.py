@@ -40,11 +40,12 @@ class RemindersModel:
 
     def sort(self):
         # Sort in date/time order. No-date items at top. Where item has date(datetime.date). time(datetime.time), or None
-        self.reminder_items.sort(key=lambda r: r.sort_key())
+        self._reminder_items.sort(key=lambda r: r.sort_key())
 
     def add(self, reminder):
-        self.reminder_items.append(reminder)
+        self._reminder_items.append(reminder)
         self.sort()
+        self.save()
 
     def delete(self, row_idx):
         del self._reminder_items[row_idx]

@@ -99,14 +99,8 @@ class ModelAdapter(QAbstractTableModel):
         # 2. The 'Reset' Sandwich (Better for sorting than beginInsertRows)
         # This tells the View: "Hold your breath, the whole list is shifting."
         self.beginResetModel()
-
-        # 3. Add to the domain list and sort
-        self.reminder_list.add(new_item)
-
+        self._reminders_model.add(new_item)
         self.endResetModel()
-
-        # 4. Persistence
-        self.reminder_list.save()
 
     @_qt_guard
     def data(self, index, role):

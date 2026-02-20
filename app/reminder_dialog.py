@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QGridLayout, QLabel,
                                QLineEdit, QTextEdit, QComboBox, QStyle,
-                               QDialogButtonBox, QCalendarWidget,
-                               QToolButton, QHBoxLayout, QMenu,
+                               QDialogButtonBox, QCalendarWidget, QMenu,
+                               QToolButton, QHBoxLayout, QMessageBox,
                                )
 from PySide6.QtCore import Qt, QDate, QTime, QSize
 from PySide6.QtGui import QIcon
@@ -58,16 +58,21 @@ class ReminderDialog(QDialog):
         self.grid.addWidget(QLabel("Date"), 0, 1)
         self.grid.addWidget(QLabel("Time"), 0, 2)
 
+        # --- CALCULATED FIXED WIDTHS FOR DAY, DATE, TIME ---
+        # 120px for "31 Dec 2025" + Icon, 90px for "12:00 PM" + Icon
+        self.day_w = int(70 * config.scale_factor)
+        self.date_w = int(110 * config.scale_factor)
+        self.time_w = int(85 * config.scale_factor)
+
         # Day Selector
-        self.days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        self.days = ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         self.day_combo = QComboBox()
         self.day_combo.addItems(self.days)
+        today_iso = QDate.currentDate().dayOfWeek() # Today's ISO (Mon=1..Sun=7)
+        self.day_combo.setCurrentIndex(today_iso)
         self.day_combo.setEditable(False)
+        self.day_combo.setFixedWidth(self.day_w)
         self.grid.addWidget(self.day_combo, 1, 0)
-
-        # Date and Time popup-launching icons
-        icon_date = self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogDetailedView)
-        icon_time = self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowRight)
 
         # --- DATE FIELD & CALENDAR-SELECTOR BUTTON ---
         self.date_container = self.build_date_picker()
@@ -76,6 +81,9 @@ class ReminderDialog(QDialog):
         # Time Picker
         self.time_container = self.build_time_picker()
         self.grid.addLayout(self.time_container, 1, 2)
+
+        # Add a blank stretch to absorb any extra space
+        self.grid.setColumnStretch(1, 3)
 
         self.main_layout.addLayout(self.grid)
 
@@ -121,14 +129,17 @@ class ReminderDialog(QDialog):
         """Updates Day dropdown when Date changes."""
         date_str = self.date_edit.text().strip()
         if not date_str:
-            return  # Handle 'Placeholder' (blank) dates gracefully
+            # User erased the date. Clear the date field.
+            self.day_combo.setCurrentIndex(0)
+            return
+
         try:
             # 1. Parse the string using the user's configured format
             py_date = dt.datetime.strptime(date_str, config.date_display_format)
 
-            # 2. Map Python weekday to the QDate dayofWeek dropdown index
-            #    = 0 (Mon) to 7 (Sun))
-            self.day_combo.setCurrentIndex(py_date.weekday())
+            # 2. Map Python weekday (0=Mon..6=Sun) to the
+            # QDate dayofWeek dropdown index (1=Mon, 7=Sun)
+            self.day_combo.setCurrentIndex(py_date.weekday() + 1)
         except ValueError:
             # User typed something invalid; we just ignore the day-sync
             pass
@@ -138,16 +149,20 @@ class ReminderDialog(QDialog):
         """
         Calculate the next upcoming date based on the Day selection.
         """
+        # If user selected the blank top item
+        if index == 0:
+            self.date_edit.setText("")
+            return
 
-        # Qt/ISO   1      2      3      4      5      6      7
-        # days: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        # Qt/ISO       1      2      3      4      5      6      7
+        # days: ["", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        target_iso_idx = self.day_combo.currentIndex()
+        if target_iso_idx == 0:
+            return
 
         # Get Today's ISO index (1-7)
         today = QDate.currentDate()
         today_iso_idx = today.dayOfWeek()
-
-        # Map ComboBox (0-6) to Qt ISO (1-7)
-        target_iso_idx = index + 1
 
         # Calculate jump
         days_ahead = (target_iso_idx - today_iso_idx + 7) % 7
@@ -208,6 +223,16 @@ class ReminderDialog(QDialog):
 
     def accept(self):
         """Validate data when use presses the OK button."""
+
+        # --- ITEM DESCRIPTION CHECK ---
+        # Strip whitespace to ensure they didn't just type a space
+        descr_text = self.descr_edit.text().strip()
+        if not descr_text:
+            QMessageBox.warning(self, "Missing Information",
+                                "The 'Item' description cannot be empty.")
+            self.descr_edit.setFocus()
+            return  # Prevent the dialog from closing
+
         date_str = self.date_edit.text().strip()
         time_str = self.time_edit.text().strip()
 
@@ -216,8 +241,8 @@ class ReminderDialog(QDialog):
             try:
                 dt.datetime.strptime(date_str, config.date_display_format)
             except ValueError:
-                QMessageBox.warning(self, "Invalid Date",
-                                    f"Date does not match format:\n{config.date_display_format}")
+                QMessageBox.warning(self, "Date Format error",
+                                    f"Date must match the format selected in the settings")
                 self.date_edit.setFocus()
                 return  # Stops the dialog from closing
 
@@ -226,8 +251,8 @@ class ReminderDialog(QDialog):
             try:
                 dt.datetime.strptime(time_str, config.time_display_format)
             except ValueError:
-                QMessageBox.warning(self, "Invalid Time",
-                                    f"Time does not match format:\n{config.time_display_format}")
+                QMessageBox.warning(self, "Time Format error",
+                                    f"Time must match the format selected in the settings")
                 self.time_edit.setFocus()
                 return
 
@@ -240,14 +265,19 @@ class ReminderDialog(QDialog):
 
         # Text Field
         self.date_edit = QLineEdit()
+        self.date_edit.setFixedWidth(self.date_w)
         date_str = dt.date.today().strftime(config.date_display_format)
         self.date_edit.setText(date_str)
 
-        # Clickable Icon (QToolButton)
+        # --- CALENDAR ICON FOR DATE BUTTON ---
+        # Unicode 0x1F4C5 is the 'Calendar' (📅)
         self.cal_btn = QToolButton()
-        # Standard "Grid" or "Calendar" style icon
-        icon = self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogDetailedView)
-        self.cal_btn.setIcon(icon)
+        self.cal_btn.setText("📅")
+        cal_icon_font = self.cal_btn.font()
+        cal_icon_font.setPointSize(config.cell_font_pt_size + 2) # Larger to match text
+        self.cal_btn.setFont(cal_icon_font)
+        cal_btn_size = int(30 * config.scale_factor)
+        self.cal_btn.setFixedSize(cal_btn_size, cal_btn_size)
         self.cal_btn.clicked.connect(self.show_calendar_popup)
 
         # Add to UI
@@ -310,12 +340,17 @@ class ReminderDialog(QDialog):
 
         # Text Field (Placeholder only, no default)
         self.time_edit = QLineEdit()
+        self.time_edit.setFixedWidth(self.time_w)
         self.time_edit.setPlaceholderText("") # Field starts empty
         time_container.addWidget(self.time_edit)
 
-        # Clock Button and Menu
+        # --- CLOCK BUTTON & TiME MENU ---
+        # Unicode 0x1F552 == 'Clock Face Three O'Clock' (🕒)
         self.time_btn = QToolButton()
-        self.time_btn.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowRight))
+        self.time_btn.setText("🕒")
+        time_icon_font = self.time_btn.font()
+        time_icon_font.setPointSize(config.cell_font_pt_size + 2) # Larger to fit with text
+        self.time_btn.setFont(time_icon_font)
 
         time_menu = QMenu(self)
         time_menu.setFont(self.font())
