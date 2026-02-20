@@ -102,6 +102,23 @@ class ModelAdapter(QAbstractTableModel):
         self._reminders_model.add(new_item)
         self.endResetModel()
 
+        # 3. Return the new position
+        return self._reminders_model.index_of(new_item)
+
+    def update_reminder(self, index, reminder_data: dict):
+        new_item = ReminderItem(
+            when=reminder_data["when"],
+            descr=reminder_data["descr"],
+            notes=reminder_data["notes"],
+            repeat=reminder_data["repeats"],
+        )
+        self.beginResetModel()
+        self._reminders_model.update(index, new_item)
+        self.endResetModel()
+
+        # Return the new position
+        return self._reminders_model.index_of(new_item)
+
     @_qt_guard
     def data(self, index, role):
         if not index:
@@ -159,6 +176,10 @@ class ModelAdapter(QAbstractTableModel):
     def get_reminder(self, row: int):
         """Delegates to the domain model to fetch the actual object."""
         return self._reminders_model.get_reminder(row)
+
+    def index_of(self, item):
+        # 'Proxy' or 'Wrapper'. Delegate the call to the domain model
+        return self.reminder_list.index_of(item)
 
     @staticmethod
     def _get_display_value(reminder, col_id):

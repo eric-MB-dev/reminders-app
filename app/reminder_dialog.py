@@ -109,7 +109,11 @@ class ReminderDialog(QDialog):
             self.descr_edit.setText(self.reminder._descr)
             self.notes_edit.setPlainText(self.reminder._notes)
 
-            if self.reminder._when:
+            if self.reminder._when is None:
+                self.date_edit.setText("")
+                self.time_edit.setText("")
+                self.day_combo.setCurrentIndex(0)
+            else:
                 when = self.reminder._when
                 date_str = when.strftime(config.date_display_format)
                 self.date_edit.setText(date_str)
@@ -287,12 +291,13 @@ class ReminderDialog(QDialog):
         return date_container
 
     def show_calendar_popup(self):
-        print("Calendar Icon Triggered")
+        #print("Calendar Icon Triggered")
 
         # Create a temporary, floating calendar
         # Attach it to the main dialog so it isn't garbage collected immediately
         self.cal_popup = QCalendarWidget(self)
         self.cal_popup.setWindowFlags(Qt.WindowType.Popup)
+        self.cal_popup.setFirstDayOfWeek(Qt.DayOfWeek.Monday) # ISO 8601 std (and mine)
 
         # -- FONT SIZE ---
         # Apply the user's configured font size to the entire widget
@@ -319,16 +324,18 @@ class ReminderDialog(QDialog):
         self.cal_popup.move(global_pos)
 
         # Internal handler to update the fields when a date is picked
-        def on_date_picked(qdate):
+        def on_date_picked():
+            qdate = self.cal_popup.selectedDate()
             py_date = dt.date(qdate.year(), qdate.month(), qdate.day())
-            self.date_edit.setText(py_date.strftime(config.date_display_format))
+            formatted_date = py_date.strftime(config.date_display_format)
+            self.date_edit.setText(formatted_date)
 
-            # Sync the Day ComboBox (Qt 1-7 to Index 0-6)
-            self.day_combo.setCurrentIndex(qdate.dayOfWeek() - 1)
+            #Day ComboBox idx ("" + Mon..Sun) == Qt/Iso idx 1..7)
+            self.day_combo.setCurrentIndex(qdate.dayOfWeek())
             self.cal_popup.close()
 
         # clicked emits the QDate that was selected
-        self.cal_popup.clicked.connect(on_date_picked)
+        self.cal_popup.selectionChanged.connect(on_date_picked)
         self.cal_popup.show()
 
 

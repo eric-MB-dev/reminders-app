@@ -47,6 +47,11 @@ class RemindersModel:
         self.sort()
         self.save()
 
+    def update(self, row_idx, reminder):
+        self._reminder_items[row_idx] = reminder
+        self.sort()
+        self.save()
+
     def delete(self, row_idx):
         del self._reminder_items[row_idx]
         self.save()
@@ -57,6 +62,16 @@ class RemindersModel:
             return self._reminder_items[row_idx]  # Or whatever your internal list is named
         except IndexError:
             return None  # Or handle as a Graceful Failure
+
+    def index_of(self, item):
+        """
+        Returns the integer row index of a specific ReminderItem.
+        Used by the View to locate a new or edited item after a sort.
+        """
+        try:
+            return self._reminder_items.index(item)
+        except ValueError:
+            return -1  # Not found
 
     def toggle_item_flag(self, row_idx):
         reminder = self.get_reminder(row_idx)

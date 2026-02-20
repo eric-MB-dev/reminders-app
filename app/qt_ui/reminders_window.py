@@ -561,9 +561,21 @@ class RemindersWindow(DateBannerWindow):
 
         self.adjustSize()
 
-    def on_edit_action(self, row):
-        print(f"[DEBUG] edit-action called for row {row}")
-        pass
+    def on_edit_action(self, row_idx):
+        #print(f"[DEBUG] edit-action called for row {row}")
+        # Get the existing item
+        reminder = self.model_adapter.get_reminder(row_idx)
+
+        from reminder_dialog import ReminderDialog
+        dialog = ReminderDialog(self, reminder=reminder)
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            data = dialog.get_results()
+
+        # Update and sort in the model
+        new_row_idx = self.model_adapter.update_reminder(row_idx, data)
+        self.finish_update(new_row_idx)
+
 
     def on_alerts_toggle_action(self, row):
         print(f"[DEBUG] alerts-toggle-action called for row {row}")
@@ -589,12 +601,10 @@ class RemindersWindow(DateBannerWindow):
             #print(f"To add: {data}")
 
             # 3. Push to the adapter and save the data
-            self.model_adapter.add_reminder(data)
+            new_row_idx = self.model_adapter.add_reminder(data)
 
-            # 4. Trigger the Proportional Refresh
-            # This ensures the new row's buttons and fonts match the current scale
-            self.refresh_ui_proportions()
-            self._update_action_buttons()
+            self.finish_update(new_row_idx)
+
 
     def on_gear_btn_clicked(self):
         """Handler for the 'Settings' button in the main window."""
@@ -626,6 +636,22 @@ class RemindersWindow(DateBannerWindow):
             # Save configuration to disk
             config.save()
             #print("[DEBUG] Settings applied and saved.")
+
+    def finish_update(self, target_row=None):
+        """
+        Adjust window and table view after an add or edit
+        """
+        # 1. Re-draw the action buttons for the new row order
+        self._update_action_buttons()
+
+        # 2. Run the 'Snug Fit' and scaling logic
+        self.refresh_ui_proportions()
+
+        # 3. Jump to the new/edited row
+        if target_row is not None and target_row >= 0:
+            idx = self.model_adapter.index(target_row, 0)
+            self.table_view.selectRow(target_row)
+            self.table_view.scrollTo(idx, QAbstractItemView.ScrollHint.EnsureVisible)
 
     def refresh_ui_proportions(self):
         """
