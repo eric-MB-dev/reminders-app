@@ -25,6 +25,13 @@ class RemindersModel:
         else:
             raise ValueError("Need reminder_list or data_manager")
 
+    def update_countdown_values(self, now):
+        # 1. Delegate the update to the data model
+        # Update every item used for countdown calculations in the model's list
+        # Assuming self.reminder_list is your collection of ReminderItems
+        for item in self._reminder_items:
+            item.update_countdown(now)
+
     def __len__(self):
         """Standard Python way to support len(model)"""
         return len(self._reminder_items) if self._reminder_items else 0

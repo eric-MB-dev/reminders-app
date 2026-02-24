@@ -118,7 +118,7 @@ class ReminderDialog(QDialog):
                 date_str = when.strftime(config.date_display_format)
                 self.date_edit.setText(date_str)
 
-                time = when.strftime(config.time_display_format)
+                time_str = when.strftime(config.time_display_format)
                 self.time_edit.setText(time_str)
         else:
             date_str = dt.datetime.now().strftime(config.date_display_format)

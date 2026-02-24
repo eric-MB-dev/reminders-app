@@ -13,7 +13,10 @@ from typing import List, Optional
 
 APP_NAME = "Reminder System"
 
-DEFAULT_CELL_FONT_SIZE = 11  # Header font set to one less in config
+ALERT_SCHEDULE = ({30,'days'}, {14,'days'}, {7,'days'}, {3,'days'}, {1,'days'},
+                  {4, 'hrs'}, {2, 'hrs'}, {1, 'hrs'}, {30, 'min'}, {15, 'min'}, {10, 'min'}, {5, 'min'})
+
+DEFAULT_CELL_FONT_SIZE = 10  # Header font set to one less in config
 
 DEFAULT_GEOM_STR = "582x278, 450x0"  # Initial size (wxh) and position (x,y)
 INITIAL_DISPLAY_DATA = ["!", "No entries yet. Add some!", "", "", "", ""]
@@ -46,14 +49,14 @@ COLUMN_SCHEMA = [
     ColDef("DATE",  "Date",      "Ctr",  100, 100),
     ColDef("TIME",  "Time",      "Ctr",  100, 100),
     # Hide repeat column to shrink the window without breaking logic
-    ColDef("REPEATS",    "Repeats",    "Ctr",   66,  66), #, visible=False),
-    ColDef("COUNTDOWN", "Countdown", "Left", 125, 125),
+    ColDef("REPEATS", "Repeats",  "Ctr",   66,  66), #, visible=False),
+    ColDef("COUNTDOWN", "Countdown", "Left", 116, 116),
 
     # Action-button Columns
-    ColDef("EDIT",   "Edit",      "Ctr",   35,  35, icon="fa5s.pencil-alt"),
-    ColDef("ALERTS", "Alerts",    "Ctr",   42,  42, icon="mdi.bell-off"),
-    ColDef("NEXT",   "Next",      "Ctr",   40,  40, icon="ei.repeat"),
-    ColDef("DEL",    "Del",       "Ctr",   35,  35, icon="fa5s.trash"),
+    ColDef("EDIT",   "Edit",     "Ctr",  34,  34, icon="fa5s.pencil-alt"),
+    ColDef("ALERTS", "Alrt",     "Ctr",  34,  34, icon="mdi.bell-off"),
+    ColDef("NEXT",   "Nxt",      "Ctr",  34,  34, icon="ei.repeat"),
+    ColDef("DEL",    "Del",      "Ctr",  34,  34, icon="fa5s.trash"),
 ]
 """
 Candidate buttons

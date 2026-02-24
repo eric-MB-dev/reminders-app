@@ -35,16 +35,17 @@ class BaseCellDelegate(QStyledItemDelegate):
         h = fm.height() - 6
 
         return QSize(width, h)
-    '''
-    def sizeHint(self, option, index):
-        fm = option.fontMetrics
-        #print("fm.height", fm.height())  # => 20
-        h = fm.height() - 6
-        return QSize(option.rect.width(), h)
-    '''
+
     def initStyleOption(self, option, index):
         """This code runs on non-critical rows, because paint() doesn't change it"""
         super().initStyleOption(option, index)
+
+        # Get the font from the Model
+        font = index.data(Qt.FontRole)
+        if font:
+            option.font = font
+        if font and font.bold():
+            print(f"Delegate saw BOLD for Row {index.row()} Col {index.column()}")
 
         model = cast("ModelAdapter", index.model())
         reminder = model.get_reminder(index.row())

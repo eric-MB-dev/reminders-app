@@ -7,7 +7,7 @@
 # authority on the table’s shape and is the bridge between domain-model data & Qt.
 
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex
-from PySide6.QtGui import QFont #, QIcon, QFontMetrics
+from PySide6.QtGui import QFont, QColor #, QIcon, QFontMetrics
 
 from app.model.reminders_model import RemindersModel
 from app.model.reminder_item import ReminderItem
@@ -53,7 +53,11 @@ class ModelAdapter(QAbstractTableModel):
 
         # Cache the font we'll need many times later
         self._bold_font = QFont()
-        self._bold_font.setBold(True)
+        self._bold_font.setBold(True)  # MUST be done in TWO steps
+
+    def update_countdown_values(self, now):
+        # Delegate the countdown-update to the data model
+        self._reminders_model.update_countdown_values(now)
 
     def on_font_changed(self):
         # Trigger a call to headerData() for FontRole/DisplayRole
@@ -128,7 +132,8 @@ class ModelAdapter(QAbstractTableModel):
 
         # Quick Exit for roles we don't handle
         if role not in (Qt.DisplayRole, C.ALERTS_ROLE, C.REPEATS_ROLE,
-                        Qt.FontRole, Qt.TextAlignmentRole):
+                        Qt.FontRole, Qt.TextAlignmentRole,
+                        Qt.ForegroundRole):
             return None
 
         row_idx = index.row()
@@ -140,33 +145,55 @@ class ModelAdapter(QAbstractTableModel):
             if role == Qt.ItemDataRole.DisplayRole:
                 return None
 
-        reminder = self.get_reminder(row_idx)
-        if not reminder:
+        item = self.get_reminder(row_idx)
+        if not item:
             return None
 
         if role == Qt.ItemDataRole.DisplayRole:
             # Derive the value to display
             col_id = C.COLUMN_SCHEMA[col_idx].id
-            return self._get_display_value(reminder, col_id)
+            return self._get_display_value(item, col_id)
 
         if role == C.ALERTS_ROLE:
             # Query from view: How to display the Alerts button
-            value = getattr(reminder, "alerts_enabled", False)
+            value = getattr(item, "alerts_enabled", False)
             #print(f"ROW {row_idx} | FLAGS: '{reminder._flags}' | ALERTS: {value}")
             return value
 
         if role == C.REPEATS_ROLE:
             # Query from view: How to display the Repeat button
-            return getattr(reminder, "repeats", False) # ToDo: Implement this
+            return getattr(item, "repeats", False)
 
         # Styling
-        if role == Qt.FontRole and getattr(reminder, "is_critical", False):
-            # Bold entire row if critical
-            return self._bold_font
+        if role == Qt.FontRole:
+            if getattr(item, "is_critical", False):
+                # Bold entire row if critical
+                #print(f"Bold for row {row_idx}, col {col_idx}")
+                return self._bold_font
+
+            if col_idx == C.DATE_IDX:
+                if getattr(item, "date", "") == "TODAY":  #in ["TODAY", "TOMORROW"]:
+                    #print(f"Bold triggered for row {row_idx}, col {col_idx}")
+                    return self._bold_font
+
+            if col_idx == C.COUNTDOWN_IDX:
+                if getattr(item, "countdown", "") in ["NOW", "LATE"]:
+                    return self._bold_font
+
+        if role == Qt.ForegroundRole:
+            # Colorize the Date cell for TODAY
+            if col_idx == C.DATE_IDX and getattr(item, "date", "") == "TODAY":
+                return QColor("#228B22")  # Forest Green
+
+            # Colorize the Countdown cell for NOW/LATE
+            if col_idx == C.COUNTDOWN_IDX and getattr(item, "countdown", "") in ["NOW", "LATE"]:
+                return QColor("#B22222")  # Firebrick Red (for urgency)
+
+            return None  # Use default text color for everything else
 
         if role == Qt.TextAlignmentRole:
             #print(f"Row {row_idx} alignment check: {reminder.has_notes}")
-            v_bit = v_alignment(reminder)
+            v_bit = v_alignment(item)
             h_bit = h_alignment(col_idx)
             return v_bit | h_bit
 
@@ -217,6 +244,12 @@ class ModelAdapter(QAbstractTableModel):
 
         if role == Qt.TextAlignmentRole:
             return C.ALIGN_MAP[col_def.align] | Qt.AlignmentFlag.AlignVCenter
+
+        if role == Qt.ItemDataRole.ToolTipRole:
+            if section == C.EDIT_IDX: return "Edit this reminder"
+            if section == C.ALERTS_IDX: return "toggle Alerts for this reminder"
+            if section == C.NEXT_IDX: return "schedule Next Repetition"
+            if section == C.DEL_IDX: return "Delete this reminder"
 
         return super().headerData(section, orientation, role)
 

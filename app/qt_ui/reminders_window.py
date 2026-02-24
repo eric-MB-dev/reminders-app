@@ -17,11 +17,14 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QAbstractItemView,
 from PySide6.QtCore import Qt, QTimer, QSize
 from PySide6.QtGui import QFont, QFontMetrics
 
+import datetime as dt
 import qtawesome as qta
 
 from date_banner import DateBannerWindow
 from auto_resizing_table_view import AutoResizingTableView
 from delegates.centered_delegate import CenteredDelegate
+
+from timer_service import TimerService
 
 # noinspection PyPep8Naming
 import app.table_constants as C
@@ -219,6 +222,33 @@ class RemindersWindow(DateBannerWindow):
         QTimer.singleShot(0, self._finish_init)
 
     # end Init
+
+
+    def connect_timer(self, service):
+        service.heartbeat.connect(self.on_heartbeat)
+
+    def on_heartbeat(self, now):
+        """Process heartbeat signal from the timer process"""
+        # On a new day, change the banner date
+        current_date = now.date()
+        if current_date != self._last_banner_date:
+            self.update_date_label()
+            #print(f"[DEBUG] Midnight Roll-over: Banner Updated to {current_date}")
+
+        # Tell the model that the time used for countdown calculations
+        # used for countdown calculations has changed.
+        self.model_adapter.update_countdown_values(now)
+
+        # --- SURGICAL REPAINT ---
+        # Define the Top-Left and Bottom-Right of the 'Countdown' column
+        rows = self.model_adapter.rowCount() - 1
+        top_left = self.model_adapter.index(0, C.COUNTDOWN_IDX)
+        bottom_right = self.model_adapter.index(rows, C.COUNTDOWN_IDX)
+
+        # Tell the View to redraw ONLY those cells
+        self.model_adapter.dataChanged.emit(top_left, bottom_right,
+                                            [Qt.ItemDataRole.DisplayRole,
+                                             Qt.ItemDataRole.FontRole])
 
 
     def resizeEvent(self, event):
@@ -572,10 +602,13 @@ class RemindersWindow(DateBannerWindow):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             data = dialog.get_results()
 
-        # Update and sort in the model
-        new_row_idx = self.model_adapter.update_reminder(row_idx, data)
-        self.finish_update(new_row_idx)
+            # Update and sort in the model
+            new_row_idx = self.model_adapter.update_reminder(row_idx, data)
+            self.finish_update(new_row_idx)
 
+            # Notify the model that the row changed so the table redraws
+            self.model_adapter.dataChanged.emit(self.model_adapter.index(row_idx, 0),
+                self.model_adapter.index(row_idx, self.model_adapter.columnCount() - 1))
 
     def on_alerts_toggle_action(self, row):
         print(f"[DEBUG] alerts-toggle-action called for row {row}")
@@ -641,17 +674,35 @@ class RemindersWindow(DateBannerWindow):
         """
         Adjust window and table view after an add or edit
         """
-        # 1. Re-draw the action buttons for the new row order
-        self._update_action_buttons()
+        # FORCE THE MODEL TO RE-SYNC
+        # Ensure the model emits the change signal so the view knows to redraw
+        self.model_adapter.layoutChanged.emit()
 
-        # 2. Run the 'Snug Fit' and scaling logic
-        self.refresh_ui_proportions()
+        # Trigger a manual heartbeat to fill the countdown immediately
+        # to prevent the 'blank countdown until next timer' delay
+        now = dt.datetime.now().replace(microsecond=0)
+        self.on_heartbeat(now)
 
-        # 3. Jump to the new/edited row
+        # POSITIONING (Select and Scroll)
+        # (BEFORE setting buttons so the view is stable)
         if target_row is not None and target_row >= 0:
             idx = self.model_adapter.index(target_row, 0)
             self.table_view.selectRow(target_row)
             self.table_view.scrollTo(idx, QAbstractItemView.ScrollHint.EnsureVisible)
+        #
+        # Jump to the new/edited row
+        if target_row is not None and target_row >= 0:
+            idx = self.model_adapter.index(target_row, 0)
+            self.table_view.selectRow(target_row)
+            self.table_view.scrollTo(idx, QAbstractItemView.ScrollHint.EnsureVisible)
+
+        # Re-attach action buttons for the new row order
+        self._update_action_buttons()
+
+        # Run the 'Snug Fit' and scaling logic
+        self.refresh_ui_proportions()
+
+
 
     def refresh_ui_proportions(self):
         """

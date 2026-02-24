@@ -10,6 +10,8 @@ from app.qt_ui.model_adapter import ModelAdapter
 from app.reminders_persistence        import RemindersPersistence
 from app.model.reminders_model        import RemindersModel
 
+from app.timer_service import TimerService
+
 # noinspection PyPep8Naming
 import table_constants as C
 
@@ -38,9 +40,23 @@ def main():
     app = QApplication(sys.argv)
     rtm = ModelAdapter(domain_model)
     window = RemindersWindow(rtm)
-    ### NO LONGER NEEED. THe window shows itself when it's ready.
-    ### window.show()
-    sys.exit(app.exec())
+
+    # Create the timer thread
+    timer_service = TimerService()
+
+    # Connect the pulse to the window's refresh logic
+    # (We'll define 'on_heartbeat' in the RemindersWindow next)
+    window.connect_timer(timer_service)
+
+    # Start the thread
+    timer_service.start()
+
+    exit_code = app.exec()
+
+    # Stop the timer service
+    timer_service.stop()
+    timer_service.wait() # Make sure the timer has finished before exiting
+    sys.exit(exit_code)
 
 if __name__ == "__main__":
     main()

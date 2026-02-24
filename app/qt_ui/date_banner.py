@@ -89,4 +89,5 @@ class DateBannerWindow(QMainWindow):
         day_format = f"%a,  {config.date_display_format}"
         day_and_date = today.strftime(day_format)   #("%a, %d %b %Y")
         self.date_label = QLabel(day_and_date)
+        self._last_banner_date = dt.date
 

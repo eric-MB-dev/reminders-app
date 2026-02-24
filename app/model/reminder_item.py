@@ -26,6 +26,9 @@ class ReminderItem:
         self._notes = notes          # optional notes (location, what to bring, etc)
         self._alert_sched = None     # TODO: Store and read back actual alert-schedule
         self._repeat_sched: str = "" # TODO: Display in table as "Daily", "Weekly", "Custom", etc.
+
+        self._faux_date_str = ""     # Date-override Used by countdown for imminent dates
+        self._countdown_str = ""     # Time remaining until the event or activity
     #end __init__
 
     def __eq__(self, other):
@@ -122,6 +125,9 @@ class ReminderItem:
         if not self._when:
             return ""
 
+        if self._faux_date_str:
+            return self._faux_date_str
+
         d = self._when.date()
         date_fmt = config.date_display_format
         return d.strftime(date_fmt).lstrip("0")
@@ -185,63 +191,84 @@ class ReminderItem:
 
     @property
     def countdown(self):
-        if not self._when:
-            return ""
+        return self._countdown_str
 
-        delta = self._when.date() - dt.date.today()
+    def update_countdown(self, now):
+        if not now or self._when is None:
+            self._countdown_str = ""
+            self._faux_date_str = ""
+            return
+
+        current_date = now.date()
+        target_date = self._when.date()
+        delta = target_date - current_date
         days = delta.days
 
-        # today_delta includes Minutes & hours
-        now = dt.datetime.now()
-        today_delta = self._when - now
-        
-        # Past
-        if days < 0:
-            return 'Past'
+        # --- Days Ahead ---
+        if days > 1:
+            self._countdown_str = f"in {fcn.pluralize(days, 'day')}"
+            self._faux_date_str = ""  # Standard date display
+            return
+        elif days == 1:
+            self._countdown_str = "in 1 day"
+            self._faux_date_str = "TOMORROW"
+            return
 
-        seconds = today_delta.total_seconds()
+        # --- Past Activity/Event ---
+        if days < 0:
+            self._countdown_str = "Past"
+            self._faux_date_str = ""
+            return
+
+        # --- TODAY (days == 0) ---
+        self._faux_date_str = "TODAY"
+        today_delta = self._when - now
+        seconds = int(today_delta.total_seconds()) # Always a float, unless we fix it.
+
+        # --- Calculate 15 min boundaries ---
+        raw_minutes = seconds // 60  # Total minutes remaining
+        #
+        # SNAP to the nearest 15 (The "v1.1"
+        # This ensures 58m -> 60m (1 hr) and 1hr 7m -> 1hr (1 hr)
+        snapped_total = (raw_minutes // 15) * 15
+        #
+        # Derive hours & minutes from the snapped total
+        hours = snapped_total // 60
+        minutes = snapped_total % 60
+
+        # Past-due today
         if seconds < 0:
             if seconds > -3600:
                 # Within the past hour
-                countdown = "LATE"
+                self._countdown_str = "LATE"
             else:
-                countdown = "Over"
-            return countdown
+                self._countdown_str = "Over"
+            return
         
         # Right now
-        minutes = int(seconds / 60)
+        minutes = seconds // 60
         if minutes == 0:
-            return "NOW"
-        
-        # Today, or tomorrow
-        # TODO: Replace DATE field with these? & return countdown = ""
-        '''
-        elif days == 0 :
-            return "TODAY"
-        elif days == 1 :
-            return "TOMORROW"
-        '''
-        # Tomorrow
-        #print(f"Delta: {delta}, delta.days: {delta.days}")
-        #print(f"Today: {dt.date.today()}, Item date: {self.when.date()}")
-        #print(f"Days: {days}")
-        if days == 1:
-            return "TOMORROW"
-        
-        # Today
-        if days == 0:
-            hours = int(seconds // 3600)
-            minutes = int( (seconds % 3600) // 60 )
-            
+            self._countdown_str = "NOW"
+            return
+
+        # Later Today
+        if hours >= 2:
+            self._countdown_str = f"in {fcn.pluralize(hours, 'hour')}"
+        elif hours == 1:
             if minutes == 0:
-                return "NOW"
-            if hours >= 2:
-                return f"in {fcn.pluralize(hours, 'hour')}"
-            if hours >= 1:
-                return f"in {fcn.pluralize(hours, 'hour')}, {minutes} min"
-            return f"in {fcn.pluralize(minutes, 'minute')}"
-        
-        # Coming up
-        return f"in {fcn.pluralize(days, 'day')}"
-    
+                self._countdown_str = "in 1 hour"
+            else:
+                # "in 1 hour, 15 min", "in 1 hour, 30 min", etc.
+                self._countdown_str = f"in 1 hour, {minutes} min"
+
+        elif minutes > 15:
+            self._countdown_str = f"in {minutes} minutes"
+
+        else:
+            # 10m & 5m reminders
+            self._countdown_str = f"in {fcn.pluralize(minutes, 'minute')}"
+
+        return
+    #end update_countdown()
+
 #end CLASS Reminder
