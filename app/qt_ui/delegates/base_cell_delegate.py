@@ -44,8 +44,6 @@ class BaseCellDelegate(QStyledItemDelegate):
         font = index.data(Qt.FontRole)
         if font:
             option.font = font
-        if font and font.bold():
-            print(f"Delegate saw BOLD for Row {index.row()} Col {index.column()}")
 
         model = cast("ModelAdapter", index.model())
         reminder = model.get_reminder(index.row())

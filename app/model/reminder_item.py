@@ -193,6 +193,12 @@ class ReminderItem:
     def countdown(self):
         return self._countdown_str
 
+    @property
+    def has_time(self):
+        # If the time is exactly 00:00:00, we treat it as a Date-only event
+        t = self._when.time()
+        return not (t.hour == 0 and t.minute == 0 and t.second == 0)
+
     def update_countdown(self, now):
         if not now or self._when is None:
             self._countdown_str = ""
@@ -237,7 +243,7 @@ class ReminderItem:
         minutes = snapped_total % 60
 
         # Past-due today
-        if seconds < 0:
+        if seconds < 0 and self.has_time:
             if seconds > -3600:
                 # Within the past hour
                 self._countdown_str = "LATE"

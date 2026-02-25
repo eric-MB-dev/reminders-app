@@ -106,6 +106,10 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         text = index.data()
         if not text: return
 
+        if not "\n" in text:
+            self.initStyleOption(option, index)
+            painter.save()
+
         # Split the data
         lines = text.strip().split("\n")
         first = lines[0]
@@ -119,10 +123,18 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         bold_font.setBold(True)
         painter.setFont(bold_font)
 
+        # Vertically center if only one line, else align to top.
+        # Left align always.
+        v_bit = Qt.AlignmentFlag.AlignVCenter
+        if "\n" in text:
+            v_bit = Qt.AlignmentFlag.AlignTop
+        alignment = Qt.AlignmentFlag.AlignLeft | v_bit
+        alignment = alignment | Qt.TextFlag.TextWordWrap
+
         # We use a rect-based drawText to get automatic wrapping
         # Get the rectangle actually used by the first line
-        first_line_rect = painter.boundingRect(option.rect, Qt.TextFlag.TextWordWrap, first)
-        painter.drawText(option.rect, Qt.TextFlag.TextWordWrap, first)
+        first_line_rect = painter.boundingRect(option.rect, alignment, first)
+        painter.drawText(option.rect, alignment, first)
 
         # 5. Draw Remaining Lines (Normal)
         if remainder:

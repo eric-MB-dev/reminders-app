@@ -40,11 +40,12 @@ class ColDef:
 
 # --- Schema Definitions (all display columns) ---
 # USABE:  col_def = C.ALL_COLS[col#]
+descr_label = "Activity or Event"
 COLUMN_SCHEMA = [
     # Data Columns
     #      ID       Label        Align   Min   Max   {Visible}
     ColDef("FLAG",  "!",         "Ctr",    8,   8),
-    ColDef("DESCR", "Item",      "Left", 200, 360),
+    ColDef("DESCR", descr_label, "Left", 200, 360),
     ColDef("DAY",   "Day",       "Ctr",   40,  40),
     ColDef("DATE",  "Date",      "Ctr",  100, 100),
     ColDef("TIME",  "Time",      "Ctr",  100, 100),
