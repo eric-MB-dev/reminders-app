@@ -113,7 +113,7 @@ class ConfigDialog(QDialog):
         lines_vbox.addWidget(lbl_lines, alignment=Qt.AlignmentFlag.AlignCenter)
         #
         self.line_limit_combo = QComboBox()
-        self.line_limit_combo.addItems(["1", "2", "3"])
+        self.line_limit_combo.addItems(["1", "2", "3", "4"])
         self.line_limit_combo.setCurrentIndex(config.line_limit - 1)
         #
         # Fix the Width & Center the ComboBox

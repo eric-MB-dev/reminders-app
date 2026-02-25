@@ -2,7 +2,7 @@ import sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtCore import QSize
-from PySide6.QtGui import QFont, QTextDocument # , QTextOption, QFontMetrics
+from PySide6.QtGui import QFont, QTextDocument, QFontMetrics, QColor  #, QTextOption
 from PySide6.QtWidgets import QStyledItemDelegate
 
 # noinspection PyPep8Naming
@@ -66,6 +66,7 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
             width = option.widget.columnWidth(index.column())
         
         doc = QTextDocument()
+        doc.setDocumentMargin(0)
 
         # Update the font with the configured point size
         f=QFont(option.font)
@@ -75,7 +76,25 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         doc.setPlainText(text)
         doc.setTextWidth(width)
 
-        height = int(doc.size().height()) - 6
+        # Calculate height for a single line
+        metrics = QFontMetrics(f)
+        line_height = metrics.lineSpacing()
+
+        # Get the actual number of lines (after wrapping)
+        # doc.lineCount() is the most accurate way to see how many
+        # lines the text takes up inside the current 'width'.
+        actual_lines = doc.lineCount()
+
+        # Apply the User Governor (Max Lines)
+        # e.g., the doce has 5 lines, but the user set max to 3
+        max_allowed = config.line_limit
+        display_lines = min(actual_lines, max_allowed)
+
+        # Calculate final snug height (Line height * allowed lines)
+        # No extra padding needed here because we are explicitly
+        # defining the height by the font's own spacing.
+        height =(line_height * display_lines) + 2
+
         return QSize(width, height)
 
     # Bold the first line only for a critical-item reminder
@@ -95,34 +114,17 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         return
 
     def paint(self, painter, option, index):
-        # Get the data and determin state.
-        reminder = index.model().get_reminder(index.row())
-        is_critical = getattr(reminder, "is_critical", False)
-
-        if not is_critical or index.column() != C.DESCR_IDX:
-            super().paint(painter, option, index)
-            return
-
-        text = index.data()
-        if not text: return
-
-        if not "\n" in text:
-            self.initStyleOption(option, index)
-            painter.save()
-
-        # Split the data
-        lines = text.strip().split("\n")
-        first = lines[0]
-        remainder = "\n".join(lines[1:]) if len(lines) > 1 else ""
-
+        # 1. Make sure no text ever goes past a cell boundary
         painter.save()
         painter.setClipRect(option.rect)
 
-        # Draw Bold First Line
-        bold_font = QFont(option.font)
-        bold_font.setBold(True)
-        painter.setFont(bold_font)
+        text = index.data()
+        if not text:
+            # Nothing to do (this code should never execute!)
+            painter.restore()
+            return
 
+        # 2. Determine vertical alignment
         # Vertically center if only one line, else align to top.
         # Left align always.
         v_bit = Qt.AlignmentFlag.AlignVCenter
@@ -131,16 +133,67 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         alignment = Qt.AlignmentFlag.AlignLeft | v_bit
         alignment = alignment | Qt.TextFlag.TextWordWrap
 
-        # We use a rect-based drawText to get automatic wrapping
-        # Get the rectangle actually used by the first line
+        # 3. Determine if we should bold the first line
+        # of a critical description column
+        reminder = index.model().get_reminder(index.row())
+        is_critical = getattr(reminder, "is_critical", False)
+        if not is_critical or index.column() != C.DESCR_IDX:
+            # --- NON-CRITICAL: NORMAL DRAWING ---
+            painter.setFont(option.font)
+            painter.drawText(option.rect, alignment, text)
+            self._draw_elide_indicator(painter, option, text)
+            painter.restore()
+            return
+
+        # 4. Initialize Style Options
+        # Ensure that 'option' reflects current model data (selection, font, etc.)
+        # before we begin manual multi-line font/rect calculations.
+        if not "\n" in text:
+            self.initStyleOption(option, index)
+
+        # 5. Draw Bold First Line
+        # Split the data to isolate the first line
+        lines = text.strip().split("\n")
+        first = lines[0]
+        remainder = "\n".join(lines[1:]) if len(lines) > 1 else ""
+
+        bold_font = QFont(option.font)
+        bold_font.setBold(True)
+        painter.setFont(bold_font)
+
+        # boundingRect calculates the height used by the wrapped first line
+        # drawText gives us automatic wrapping
         first_line_rect = painter.boundingRect(option.rect, alignment, first)
         painter.drawText(option.rect, alignment, first)
 
-        # 5. Draw Remaining Lines (Normal)
+        # 6. Draw Remaining Lines (Normal weight)
+        # shift the drawing area down by exactly the height of the first line
         if remainder:
             painter.setFont(option.font)  # Back to normal
             # Shift the drawing area down by the height of the first (wrapped) line
             remainder_rect = option.rect.adjusted(0, first_line_rect.height(), 0, 0)
             painter.drawText(remainder_rect, Qt.TextFlag.TextWordWrap, remainder)
 
+        # 7. Elide the text, if needed
+        self._draw_elide_indicator(painter, option, text)
+
         painter.restore()
+
+    def _draw_elide_indicator(self, painter, option, text):
+        # 1. Initialize doc with the current cell width and font
+        check_doc = QTextDocument()
+        check_doc.setDocumentMargin(0)
+        check_doc.setDefaultFont(option.font)
+        check_doc.setPlainText(text)
+        check_doc.setTextWidth(option.rect.width())
+
+        # 2. Check if text is "crushed out" based on user limit.
+        # If so, add the ellipsis
+        if check_doc.lineCount() > config.line_limit:
+            painter.save()
+            painter.setPen(QColor("#888888"))  # Subtle gray
+            painter.drawText(option.rect,
+                             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom,
+                             "... ")
+            painter.restore()
+#endCLASS

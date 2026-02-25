@@ -709,32 +709,42 @@ class RemindersWindow(DateBannerWindow):
         Proportional scaling of row heights, column widths, and icon sizes
         based on original sizes and a scaling factor.
         """
+        # 1. TEMPORARILY FREEZE the layout to prevent 'ghosting'
+        header = self.table_view.verticalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+
         scale = config.scale_factor
 
-        # Update Table Font (This triggers the Delegate sizeHints)
+        # 1. Update the font (triggers the Delegate sizeHints)
         table_font = self.table_view.font()
         table_font.setPointSize(config.cell_font_pt_size)
         self.table_view.setFont(table_font)
 
-        # Scale Icons and Specific Column Widths
+        # 2. Scale Icons and Base Widths
         new_icon_size = int(24 * scale)
         self.table_view.setIconSize(QSize(new_icon_size, new_icon_size))
 
-        # We set these base widths, but resizeColumnsToContents will fine-tune them
+        # 3. RESET: Use beginResetModel/endResetModel instead of layoutChanged
+        # It's more 'violent' but much more stable than layoutChanged
+        # for major UI scaling changes.
+        self.model_adapter.beginResetModel()
+        self.model_adapter.endResetModel()
+
+        # 4. RESIZE (while frozen)
+        # Adjust column widths to account for current font.
+        # We set the base widths, but resizeColumnsToContents will fine-tune them
         self.table_view.setColumnWidth(C.TIME_IDX, int(85 * scale))
         self.table_view.setColumnWidth(C.DATE_IDX, int(110 * scale))
-
-        # Force Table to Recalculate
-        # This is essential so the window 'knows' how much space the table actually needs
         self.table_view.resizeColumnsToContents()
-        self.table_view.resizeRowsToContents()
-        self.model_adapter.layoutChanged.emit()
 
-        # Give the OS a moment to process the new table size, then snap.
-        # processEvents() ensures the layout math is finished before we resize the window.
+        # 5. SET THE MODE: Tell the table to use our sizeHint logic (needed for vertical size)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+
+        # 6. REPAINT: Refresh the View and Window
+        self.table_view.viewport().update()
         QApplication.processEvents()
         self.adjustSize()
 
-        #print(f"[DEBUG] Refresh complete. Current Scale: {scale:.2f}")
+    #end refresh_ui_proportions
 
 #endClass RemindersWindow
