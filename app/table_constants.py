@@ -13,7 +13,11 @@ from typing import List, Optional
 
 APP_NAME = "Reminder System"
 
-ALERT_SCHEDULE = ({30,'days'}, {14,'days'}, {7,'days'}, {3,'days'}, {1,'days'},
+# Release Identity
+APP_VERSION = "1.0-beta"
+APP_BUILD = "2026.02.25"  # Use the date as the unique identifier
+
+ALERT_SCHEDULE = ({60,'days'}, {30,'days'}, {14,'days'}, {7,'days'}, {3,'days'}, {1,'days'},
                   {4, 'hrs'}, {2, 'hrs'}, {1, 'hrs'}, {30, 'min'}, {15, 'min'}, {10, 'min'}, {5, 'min'})
 
 DEFAULT_CELL_FONT_SIZE = 10  # Header font set to one less in config

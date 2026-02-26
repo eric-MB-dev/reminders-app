@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (QDialog, QFormLayout, QSpinBox, QComboBox,
                                QGroupBox, QButtonGroup, QRadioButton, QLabel,
                                )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont, QColor
 
 # noinspection PyPep8Naming
 import table_constants as C
@@ -125,6 +126,33 @@ class ConfigDialog(QDialog):
         selectors_layout.addLayout(lines_vbox)
 
         self.layout.addLayout(selectors_layout)
+
+        # --- VERSION FOOTER ---
+        # 1. Create the Footer Widget
+        version_text = f"Version: {C.APP_VERSION} | Build: {C.APP_BUILD}"
+        version_info = QLabel(version_text)
+        version_info.setTextFormat(Qt.TextFormat.PlainText) # Prevent light gray "rich text" build#
+
+        # 2. Make it copyable (for bug reports and such)
+        version_info.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+
+        # 3. Employ the user's configured font size (so they can read it)
+        footer_font = QFont(self.font())  # Start with current dialog font
+        footer_font.setPointSize(config.cell_font_pt_size)
+        #footer_font.setPointSize(config.cell_font_pt_size - 1)  # Slightly smaller for 'footer' feel
+        footer_font.setWeight(QFont.Weight.DemiBold)  # Darken the numbers to match the letters
+        version_info.setFont(footer_font)
+
+        # 4. THE STYLE: Standard gray (#666666) or muted gray (#888888) for a professional look>>
+        version_info.setStyleSheet("color: #666666;")  #  color: #888888; font-style: italic;
+        version_info.setAlignment(Qt.AlignmentFlag.AlignRight)
+
+        version_layout = QHBoxLayout()
+        version_layout.addStretch()  # Push to the right
+        version_layout.addWidget(version_info)
+
+        # Add to your main dialog layout
+        self.layout.addLayout(version_layout)
 
         # --- BOTTOM: BUTTONS ---
         # Standard OK/Cancel Buttons
