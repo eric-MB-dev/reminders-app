@@ -124,16 +124,34 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
             painter.restore()
             return
 
-        # 2. Determine vertical alignment
-        # Vertically center if only one line, else align to top.
-        # Left align always.
+        # 2. Determine vertical alignment (Left align always)
+        # Center vertically if it's a single line OR if the user restricted rows to 1 line.
         v_bit = Qt.AlignmentFlag.AlignVCenter
-        if "\n" in text:
+
+        # Check the 'anchor' column (Description) for newlines
+        # We can check "text", but that value is good only if this IS the Descr column
+        reminder = index.model().get_reminder(index.row())
+        descr_text = getattr(reminder, "descr", "")
+
+        # Only align to Top if there is a newline AND the user allows > 1 line.
+        if "\n" in descr_text and config.line_limit > 1:
             v_bit = Qt.AlignmentFlag.AlignTop
         alignment = Qt.AlignmentFlag.AlignLeft | v_bit
         alignment = alignment | Qt.TextFlag.TextWordWrap
 
-        # 3. Determine if we should bold the first line
+        # 3. Split the data to isolate the first line
+        lines = text.strip().split("\n")
+        first = lines[0]
+
+        # If the user only wants 1 line, IGNORE the rest of the text
+        # for drawing purposes. This ensures ONLY the first line is centered.
+        if config.line_limit == 1:
+            text = first  # If multiple, pretend the first line is the only line
+            remainder = "" # Force no remainder
+        else:
+            remainder = "\n".join(lines[1:]) if len(lines) > 1 else ""
+
+        # 4. Determine if we should bold the first line
         # of a critical description column
         reminder = index.model().get_reminder(index.row())
         is_critical = getattr(reminder, "is_critical", False)
@@ -141,22 +159,17 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
             # --- NON-CRITICAL: NORMAL DRAWING ---
             painter.setFont(option.font)
             painter.drawText(option.rect, alignment, text)
-            self._draw_elide_indicator(painter, option, text)
+            self._draw_elide_indicator(painter, option, descr_text)
             painter.restore()
             return
 
-        # 4. Initialize Style Options
+        # 5. Initialize Style Options
         # Ensure that 'option' reflects current model data (selection, font, etc.)
         # before we begin manual multi-line font/rect calculations.
         if not "\n" in text:
             self.initStyleOption(option, index)
 
-        # 5. Draw Bold First Line
-        # Split the data to isolate the first line
-        lines = text.strip().split("\n")
-        first = lines[0]
-        remainder = "\n".join(lines[1:]) if len(lines) > 1 else ""
-
+        # 6. Draw Bold First Line
         bold_font = QFont(option.font)
         bold_font.setBold(True)
         painter.setFont(bold_font)
@@ -166,7 +179,7 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
         first_line_rect = painter.boundingRect(option.rect, alignment, first)
         painter.drawText(option.rect, alignment, first)
 
-        # 6. Draw Remaining Lines (Normal weight)
+        # 7. Draw Remaining Lines (Normal weight)
         # shift the drawing area down by exactly the height of the first line
         if remainder:
             painter.setFont(option.font)  # Back to normal
@@ -174,10 +187,12 @@ class LeftJustifiedDelegate(QStyledItemDelegate):
             remainder_rect = option.rect.adjusted(0, first_line_rect.height(), 0, 0)
             painter.drawText(remainder_rect, Qt.TextFlag.TextWordWrap, remainder)
 
-        # 7. Elide the text, if needed
-        self._draw_elide_indicator(painter, option, text)
+        # 8. Elide the text, if needed
+        self._draw_elide_indicator(painter, option, descr_text)
 
         painter.restore()
+    #end paint()
+
 
     def _draw_elide_indicator(self, painter, option, text):
         # 1. Initialize doc with the current cell width and font
