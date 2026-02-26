@@ -1,3 +1,19 @@
+VERSION 1.0-beta
+A usable, functioning app, with enhancements to come.
+Alerts & Repeat-reminders not yet implemented, but GUI and major operations
+are tested and working.
+
+[x] Timer Thread module
+[x] Countdown: Bold "Tomorrow" and "Today" => DATE column (countdown stays blank)
+[x] Add "About" info (byline, date, version#) to bottom of Settings dialog
+[x] Bug Fixes:
+    [x] Proper vertitical alignment for a critical-row description
+    [x] Countdown now reports "Over" only when event-time exists.
+    [x] Eliminate extra height in display rows
+    [x] Limit rows to user-specified maximum #of lines
+    [x] When #rows = 1, the line should be centered, same as when "\n" isn't present
+    [x] Countdown is always vertically centered. It should use the same logic as descr
+
 CHECKPOINT #8
 [x] Activate item-Delete action button
 [x] ReminderDialog created and tested
