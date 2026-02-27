@@ -1,0 +1,15 @@
+# Core dependencies for the UI
+PySide6==6.10.1
+
+# Icon for 'Next Repeat' UI Action
+QtAwesome==1.4.1
+
+# Configuration Management
+configobj==5.0.9
+
+# Additional Dependencies
+pytest==9.0.2
+
+# Possible Additions
+# black -- consistent, standardized spacing & line breaks when saving edits
+# mypy -- static type checker (reads type hints, verifies fcns get the right types)

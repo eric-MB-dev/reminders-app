@@ -12,7 +12,7 @@
 
 
 2. **"Critical" Flag**  
-Click in the **"!"** column to mark a reminder as **Critical**. 
+Click in the **"!!"** column to mark a reminder as **Critical**. 
 The entire row bolds, and the first line of your description stands out.
 
 
