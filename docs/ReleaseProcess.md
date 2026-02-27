@@ -7,5 +7,5 @@
  - [ ] docs/QuickStart.md
  - [ ] docs/UserGuide.md
 
-# Build the Executable
+## Build the Executable
 _Coming soon_
